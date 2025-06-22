@@ -156,7 +156,12 @@ class Deployer:
             if not self.setup_environment():
                 return False, "", "Failed to set up environment"
 
-            cmd = [str(self.get_python_executable()), file_path] + (args or [])
+            # Check if file exists
+            full_path = os.path.join(self.repo_path, file_path)
+            if not os.path.exists(full_path):
+                return False, "", f"File not found: {file_path}"
+
+            cmd = [str(self.get_python_executable()), full_path] + (args or [])
             result = subprocess.run(cmd, cwd=self.repo_path, capture_output=True, text=True, timeout=300)
             
             if result.returncode != 0:
@@ -164,13 +169,10 @@ class Deployer:
             
             return True, result.stdout, result.stderr
 
-        except subprocess.TimeoutExpired:
-            return False, "", "Process timed out after 300 seconds"
+        except subprocess.TimeoutExpired as e:
+            return False, "", f"Process timed out after {e.timeout} seconds"
 
-        except FileNotFoundError:
-            return False, "", f"File not found: {file_path}"
-
-        except BaseException as e:
+        except Exception as e:
             return False, "", str(e)
 
     def setup_environment(self) -> bool:

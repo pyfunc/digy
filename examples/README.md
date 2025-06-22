@@ -9,7 +9,11 @@ A simple "Hello, World!" example that shows basic script execution.
 
 **Run it with:**
 ```bash
-digy run examples/basic/hello_world.py
+# Run locally
+digy local examples/basic/hello_world.py
+
+# Or run in RAM for better performance
+digy ram examples/basic/hello_world.py
 ```
 
 ## Environment Examples
@@ -19,14 +23,17 @@ Shows information about the current execution environment, including Python vers
 
 **Run it with different environments:**
 ```bash
-# Local environment (default)
-digy run examples/env/environment_info.py
+# Local environment
+digy local examples/env/environment_info.py
 
 # Docker environment
-digy --env docker --docker-image python:3.9 run examples/env/environment_info.py
+digy docker --image python:3.9 examples/env/environment_info.py
+
+# RAM execution (fastest)
+digy ram examples/env/environment_info.py
 
 # Remote environment (requires SSH setup)
-digy --env remote --remote-host user@example.com run examples/env/environment_info.py
+digy remote user@example.com github.com/yourusername/yourrepo examples/env/environment_info.py
 ```
 
 ## File Attachment Examples
@@ -37,10 +44,13 @@ Demonstrates how to work with attached files in your scripts.
 **Run it with file attachments:**
 ```bash
 # Attach specific files
-digy run examples/attachments/file_processor.py --attach file1.txt --attach file2.txt
+digy local examples/attachments/file_processor.py --attach file1.txt --attach file2.txt
 
 # Use interactive mode to select files
-digy run examples/attachments/file_processor.py --interactive-attach
+digy local examples/attachments/file_processor.py --interactive-attach
+
+# Or run in Docker with file attachments
+digy docker --image python:3.9 examples/attachments/file_processor.py --attach file1.txt
 ```
 
 ## Authentication Examples
@@ -49,7 +59,7 @@ To use authentication, you'll need to set up the appropriate authentication prov
 
 ```bash
 # Run with SQL authentication
-digy --auth sql --auth-config dbconfig.json run your_script.py
+digy local --auth sql --auth-config dbconfig.json your_script.py
 ```
 
 ## Creating Your Own Examples
@@ -64,15 +74,17 @@ digy --auth sql --auth-config dbconfig.json run your_script.py
 To test all examples, you can use the following commands:
 
 ```bash
-# Test basic example
-digy run examples/basic/hello_world.py
+# Test basic example in different environments
+digy local examples/basic/hello_world.py
+digy ram examples/basic/hello_world.py
 
-# Test environment info in local mode
-digy run examples/env/environment_info.py
+# Test environment info in different modes
+digy local examples/env/environment_info.py
+digy docker --image python:3.9 examples/env/environment_info.py
 
 # Test file processor with a sample file
 echo "Test content" > test.txt
-digy run examples/attachments/file_processor.py --attach test.txt
+digy local examples/attachments/file_processor.py --attach test.txt
 rm test.txt
 ```
 

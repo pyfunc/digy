@@ -94,32 +94,16 @@ class GitLoader:
                     SpinnerColumn(),
                     TextColumn("[progress.description]{task.description}"),
                     console=console
-                ) as progress:
-                    task = progress.add_task(f"Cloning {repo_info['name']}...", total=None)
-
-                    # Use Docker to clone repository
-                    container = self.docker_client.containers.run(
-                        self.manifest.get('config', {}).get('base_image', 'python:3.12-slim'),
-                        f'git clone {repo_info["url"]} {ram_disk}/{repo_info["name"]}',
-                        volumes=volumes,
-                        remove=True
-                    )
-
-                    if container.status != 'exited' or container.exit_code != 0:
-                        console.print(f"❌ Failed to clone repository: {container.logs().decode()}")
-                        return None
-
-                    progress.update(task, description="✅ Cloned repository")
             else:
-                # Fall back to local git clone if Docker is not available
-                console.print("⚠️ Docker not available, falling back to local git clone")
-                git.Repo.clone_from(
-                    repo_info["url"],
-                    local_path,
+                # Fallback to local git clone
+                repo = git.Repo.clone_from(
+                    repo_url,
+                    os.path.join(self.ram_path, "repo"),
                     branch=branch
                 )
-
-            return f"{ram_disk}/{repo_info['name']}"
+                repo_path = os.path.join(self.ram_path, "repo")
+                self.repo_path = repo_path
+                return repo_path
 
         except Exception as e:
             console.print(f"❌ Error loading repository: {e}")

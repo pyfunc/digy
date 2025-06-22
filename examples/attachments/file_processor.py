@@ -4,13 +4,15 @@ File processing example for DIGY.
 This script demonstrates how to work with attached files.
 
 Run with file attachments:
-  digy run . file_processor.py --attach file1.txt --attach file2.txt
+  digy local . file_processor.py --attach file1.txt --attach file2.txt
   
 Or use interactive mode:
-  digy run . file_processor.py --interactive-attach
+  digy local . file_processor.py --interactive-attach
+
+Or from a GitHub repo:
+  digy local github.com/username/repo file_processor.py --attach file1.txt
 """
 import os
-import sys
 from pathlib import Path
 
 def process_files(attachments_dir='.digy_attachments'):
@@ -21,7 +23,7 @@ def process_files(attachments_dir='.digy_attachments'):
     # Check if attachments directory exists
     if not os.path.exists(attachments_dir):
         print("[yellow]No attachments directory found.[/yellow]")
-        print("Run with: digy run . file_processor.py --attach file1.txt --attach file2.txt")
+        print("Run with: digy local . file_processor.py --attach file1.txt --attach file2.txt")
         return
     
     # List all files in the attachments directory
@@ -53,9 +55,10 @@ def process_files(attachments_dir='.digy_attachments'):
                             print("Preview:")
                             print("```")
                             print(content)
-                            print("```" if len(content) < 500 else "... (truncated)")
-                except (UnicodeDecodeError, PermissionError):
-                    print("(Binary file - preview not available)")
+                            print("```" if len(content) < 500 
+                                  else "... (truncated)")
+                except (UnicodeDecodeError, PermissionError) as e:
+                    print(f"(Binary file - {str(e)}"[:80] + ")")
             
         except Exception as e:
             print(f"[red]Error processing {file_path}: {e}[/red]")
@@ -63,7 +66,10 @@ def process_files(attachments_dir='.digy_attachments'):
 def main():
     """Main function to demonstrate file processing."""
     print("\n[bold]DIGY File Processor Example[/bold]")
-    print("This example shows how to work with attached files in DIGY.")
+    print(
+        "This example shows how to work with attached files in DIGY. "
+        "You can attach files using the --attach flag or --interactive-attach."
+    )
     
     # Show current working directory
     print(f"\nCurrent working directory: {os.getcwd()}")

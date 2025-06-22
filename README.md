@@ -37,6 +37,9 @@ digy remote user@host github.com/username/repo script.py
 
 # Run in a Docker container
 digy docker --image python:3.12 github.com/username/repo script.py
+
+# Run in RAM for maximum performance
+digy ram github.com/username/repo script.py
 ```
 
 ## 🐳 Docker Configuration
@@ -222,7 +225,15 @@ digy docker --image python:3.12 github.com/username/repo script.py
 - Customizable Docker images
 - Volume mounting support
 
-### 4. JVM Execution
+### 4. RAM Execution
+```bash
+digy ram github.com/username/repo script.py
+```
+- Runs code directly in RAM for maximum performance
+- No disk I/O overhead
+- Ideal for high-performance computing
+
+### 5. JVM Execution
 ```bash
 digy jvm github.com/username/repo script.py
 ```
