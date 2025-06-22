@@ -169,7 +169,11 @@ class EnvironmentManager:
             
         ssh_cmd = ["ssh", host]
         # Properly escape and quote command arguments for SSH
-        escaped_args = [f'"{arg.replace("\"", "\\\"")}"' for arg in command]
+        escaped_args = []
+        for arg in command:
+            # First escape backslashes, then escape quotes
+            escaped = arg.replace('\\', '\\\\').replace('"', '\\"')
+            escaped_args.append(f'"{escaped}"')
         ssh_cmd.append(" ".join(escaped_args))
         
         return subprocess.run(" ".join(ssh_cmd), shell=True, **kwargs)

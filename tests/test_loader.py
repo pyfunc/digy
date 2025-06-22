@@ -86,6 +86,7 @@ class TestGitLoader:
         with tempfile.TemporaryDirectory() as temp_dir:
             loader = GitLoader(temp_dir)
             loader._docker_client = None  # Mock no Docker available
+            loader.manifest = {}  # Mock empty manifest
             result = loader.download_repo("github.com/user/repo")
 
             assert result is not None

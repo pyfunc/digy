@@ -193,23 +193,27 @@ poetry install
 from digy import digy
 
 # Załaduj repozytorium i uruchom interaktywne menu
-digy('github.com/pyfunc/free-on-pypi')
+digy.local('github.com/pyfunc/free-on-pypi')
 ```
 
 ### Wiersz poleceń
 
 ```bash
-# Proste uruchomienie (automatycznie wykrywa repo URL)
-digy github.com/pyfunc/free-on-pypi
+# Uruchomienie w środowisku lokalnym
+digy local github.com/pyfunc/free-on-pypi
 
-# Lub z komendą start
-digy start github.com/pyfunc/free-on-pypi
+# Uruchomienie w pamięci RAM (najszybsze)
+digy ram github.com/pyfunc/free-on-pypi
 
+# Uruchomienie w kontenerze Docker
+digy docker github.com/pyfunc/free-on-pypi
+
+# Dodatkowe opcje
 # Z określoną gałęzią
-digy start github.com/user/repo --branch develop
+digy local github.com/user/repo --branch develop
 
 # Szybkie uruchomienie konkretnego pliku
-digy run github.com/pyfunc/free-on-pypi pypi.py --args "from_file"
+digy ram github.com/pyfunc/free-on-pypi pypi.py --args "from_file"
 
 # Status i informacje
 digy status
@@ -243,8 +247,14 @@ Po załadowaniu repozytorium DIGY wyświetli interaktywne menu z opcjami:
 ```python
 from digy import digy
 
-# Załaduj repozytorium
-digy('github.com/pyfunc/free-on-pypi')
+# Załaduj repozytorium lokalnie
+digy.local('github.com/pyfunc/free-on-pypi')
+
+# Lub w pamięci RAM
+digy.ram('github.com/pyfunc/free-on-pypi')
+
+# Albo w Dockerze
+digy.docker('github.com/pyfunc/free-on-pypi')
 ```
 
 Po załadowaniu zobaczysz menu z opcjami uruchomienia:
@@ -335,14 +345,22 @@ deployer = Deployer(local_path)
 ### Programowe uruchamianie
 ```python
 from digy import digy
-from digy.deployer import Deployer
 
-# Załaduj bez menu
-deployer = Deployer("/path/to/repo")
-deployer.setup_environment()
+# Uruchomienie z kodu Pythona
+# Lokalnie
+result = digy.local('github.com/user/repo', 'script.py', ['arg1', 'arg2'])
 
-# Uruchom konkretny plik
-success, stdout, stderr = deployer.run_python_file("script.py", ["arg1", "arg2"])
+# W pamięci RAM
+result = digy.ram('github.com/user/repo', 'script.py', ['arg1', 'arg2'])
+
+# W Dockerze
+result = digy.docker('github.com/user/repo', 'script.py', ['arg1', 'arg2'])
+
+# Wynik zawiera (success, stdout, stderr)
+print(f"Sukces: {result[0]}")
+print(f"Wyjście: {result[1]}")
+if result[2]:
+    print(f"Błędy: {result[2]}")
 ```
 
 ## 🛠️ Rozwój

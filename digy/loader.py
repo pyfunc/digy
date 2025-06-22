@@ -132,9 +132,14 @@ class GitLoader:
             dotenv.load_dotenv(env_path)
 
     def load_manifest(self) -> Dict:
-        """Load Docker manifest configuration with environment overrides"""
+        """Load manifest file from repository"""
         manifest_path = Path(__file__).parent / "manifest.yml"
+        
         try:
+            if not os.path.exists(manifest_path):
+                console.print("⚠️ Warning: Manifest file not found")
+                return {}
+
             with open(manifest_path, 'r') as f:
                 return yaml.safe_load(f)
         except Exception as e:

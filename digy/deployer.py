@@ -60,15 +60,18 @@ class Deployer:
             ) as progress:
                 task = progress.add_task("Creating virtual environment...", total=None)
 
-                # Use virtualenv.create() instead of cli_run()
-                virtualenv.cli_run([self.venv_path])
+                # Use subprocess to create virtualenv
+                subprocess.run([sys.executable, '-m', 'virtualenv', self.venv_path], check=True)
                 progress.update(task, description="✅ Virtual environment created")
 
             console.print(f"🐍 Virtual environment: {self.venv_path}")
             return True
 
+        except subprocess.CalledProcessError:
+            console.print("❌ Failed to create virtual environment")
+            return False
         except Exception as e:
-            console.print(f"❌ Failed to create virtual environment: {e}")
+            console.print(f"❌ Error creating virtual environment: {e}")
             return False
 
     def get_python_executable(self) -> str:
@@ -137,45 +140,32 @@ class Deployer:
 
             return True
 
-        except Exception as e:
+        except BaseException as e:
             console.print(f"❌ Error installing package: {e}")
             return False
 
     def run_python_file(self, file_path: str, args: List[str] = None) -> Tuple[bool, str, str]:
         """Run a Python file in the virtual environment"""
-        # Ensure environment is properly set up
-        if not self.setup_environment():
-            return False, "", "Failed to set up environment"
-
-        python_executable = self.get_python_executable()
-        full_path = os.path.join(self.repo_path, file_path)
-
-        if not os.path.exists(full_path):
-            return False, "", f"File not found: {file_path}"
-
-        # Prepare command
-        cmd = [python_executable, full_path]
-        if args:
-            cmd.extend(args)
-
-        console.print(f"🚀 Running: {' '.join(cmd)}")
-
         try:
-            # Run the file
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                cwd=self.repo_path,
-                timeout=300  # 5-minute timeout
-            )
+            if not self.setup_environment():
+                return False, "", "Failed to set up environment"
 
-            return result.returncode == 0, result.stdout, result.stderr
+            cmd = [str(self.get_python_executable()), file_path] + (args or [])
+            result = subprocess.run(cmd, cwd=self.repo_path, capture_output=True, text=True, timeout=300)
+            
+            if result.returncode != 0:
+                return False, result.stdout, result.stderr
+            
+            return True, result.stdout, result.stderr
 
         except subprocess.TimeoutExpired:
-            return False, "", "Process timed out after 5 minutes"
-        except Exception as e:
-            return False, "", f"Error running file: {e}"
+            return False, "", "Process timed out after 300 seconds"
+
+        except FileNotFoundError:
+            return False, "", f"File not found: {file_path}"
+
+        except BaseException as e:
+            return False, "", str(e)
 
     def setup_environment(self) -> bool:
         """Set up the complete deployment environment"""

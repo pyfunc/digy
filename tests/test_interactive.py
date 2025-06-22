@@ -263,13 +263,13 @@ class TestInteractiveMenu:
     def test_execute_action_all_actions(self):
         """Test all menu actions can be executed"""
         actions_to_test = [
-            "show_info", "view_readme", "setup_env", "list_files",
-            "run_file", "inspect_file", "shell"
+            "show_repository_info", "view_readme", "setup_environment",
+            "list_python_files", "run_python_file", "inspect_file",
+            "interactive_shell"
         ]
 
         for action in actions_to_test:
-            with patch.object(self.menu, action.replace('_', '_').replace('show', 'show_repository').replace('env',
-                                                                                                             'environment')) as mock_method:
+            with patch.object(self.menu, action) as mock_method:
                 continue_execution = self.menu.execute_action(action)
                 mock_method.assert_called_once()
                 if action != "exit":

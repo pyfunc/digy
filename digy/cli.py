@@ -125,6 +125,45 @@ def create_env(path: str, python: Optional[str]):
 @click.option('--file', '-f', 'files', multiple=True, help='Files to attach')
 @add_options(env_options)
 @click.pass_context
+def local(
+    ctx,
+    repo_url: str,
+    branch: str,
+    no_interactive: bool,
+    files: list,
+    venv_path: Optional[str],
+    python_path: Optional[str],
+    no_venv: bool,
+):
+    """
+    Run a repository locally
+
+    REPO_URL can be:
+    - github.com/user/repo
+    - git@github.com:user/repo.git
+    - /path/to/local/repo
+    - file:///path/to/local/repo
+    """
+    # Set environment type to local
+    ctx.obj['env_manager'] = EnvironmentManager(env_type='local')
+    
+    # Call the original start command with the context
+    ctx.invoke(start, 
+              repo_url=repo_url, 
+              branch=branch, 
+              no_interactive=no_interactive,
+              files=files,
+              venv_path=venv_path,
+              python_path=python_path,
+              no_venv=no_venv)
+
+@main.command()
+@click.argument('repo_url')
+@click.option('--branch', '-b', default='main', help='Git branch to checkout')
+@click.option('--no-interactive', is_flag=True, help='Skip interactive menu')
+@click.option('--file', '-f', 'files', multiple=True, help='Files to attach')
+@add_options(env_options)
+@click.pass_context
 def start(
     ctx,
     repo_url: str,
@@ -136,36 +175,23 @@ def start(
     no_venv: bool,
 ):
     """
-    Start DIGY with a repository from Git
+    Start DIGY with a repository from Git (legacy, use 'local' instead)
 
     REPO_URL can be:
     - github.com/user/repo
-    - https://github.com/user/repo
-    - Any valid Git URL
+    - git@github.com:user/repo.git
+    - /path/to/local/repo
+    - file:///path/to/local/repo
     """
-    # Handle authentication if requested
-    auth_provider = None
-    if ctx.obj.get('auth_type'):
-        auth_provider = get_auth_provider(
-            ctx.obj['auth_type'],
-            config_file=ctx.obj.get('auth_config')
-        )
-        if auth_provider and not auth_provider.authenticate():
-            console.print("[red]Authentication failed[/red]")
-            sys.exit(1)
+    # Initialize environment manager from context or create new
+    env_manager = ctx.obj.get('env_manager', EnvironmentManager(env_type='local'))
     
-    # Handle environment setup
-    env_manager = ctx.obj['env_manager']
-    if not no_venv:
-        if venv_path:
-            env_manager.venv_path = venv_path
-        elif python_path:
-            env_manager.python_path = python_path
-        elif not env_manager.venv_path:
-            # Try to find or create a virtual environment
-            env_path = select_virtualenv()
-            if env_path:
-                env_manager.venv_path = env_path
+    # If no virtualenv specified and not explicitly disabled, try to find one
+    if not venv_path and not no_venv and not python_path:
+        # Try to find or create a virtual environment
+        env_path = select_virtualenv()
+        if env_path:
+            env_manager.venv_path = env_path
     
     if no_interactive:
         console.print("🚀 Loading repository in non-interactive mode...")
