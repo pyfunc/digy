@@ -118,6 +118,8 @@ poetry.lock
 .ropeproject
 scrape_results
 TODO.txt
+DONE.md
+TODO.md
 # mkdocs documentation
 /site
 
