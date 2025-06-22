@@ -75,19 +75,18 @@ class TestGitLoader:
     @patch('git.Repo.clone_from')
     @patch('digy.loader.memory_manager')
     @patch('subprocess.run')
-    @patch('yaml.safe_load')
-    def test_download_repo_success(self, mock_yaml, mock_run, mock_memory_manager, mock_clone):
+    def test_download_repo_success(self, mock_run, mock_memory_manager, mock_clone):
         """Test successful repository download"""
         # Setup mocks
         mock_memory_manager.allocate.return_value = True
         mock_repo = MagicMock()
         mock_clone.return_value = mock_repo
         mock_run.return_value.returncode = 0
-        mock_yaml.return_value = {}  # Mock empty manifest
-    
+        
         with tempfile.TemporaryDirectory() as temp_dir:
             loader = GitLoader(temp_dir)
             loader._docker_client = None  # Mock no Docker available
+            loader.manifest = {}  # Mock empty manifest
             result = loader.download_repo("github.com/user/repo")
     
             assert result is not None

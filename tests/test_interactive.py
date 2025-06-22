@@ -269,9 +269,7 @@ class TestInteractiveMenu:
         ]
 
         for action in actions_to_test:
-            with patch.object(self.menu, action) as mock_method:
-                # Mock the return value of the action
-                mock_method.return_value = True
+            with patch.object(self.menu, action, return_value=True) as mock_method:
                 continue_execution = self.menu.execute_action(action)
                 mock_method.assert_called_once()
                 if action != "exit":

@@ -60,16 +60,17 @@ class Deployer:
                 task = progress.add_task("Creating virtual environment...", total=None)
                 # Use subprocess to create virtualenv
                 result = subprocess.run(
-                    [sys.executable, '-m', 'virtualenv', self.venv_path],
+                    [sys.executable, '-m', 'venv', self.venv_path],
                     capture_output=True,
                     text=True
                 )
                 if result.returncode != 0:
-                    console.print(f"❌ Failed to create virtual environment: {result.stderr}")
-                    return False
+                    raise Exception(f"Failed to create virtual environment: {result.stderr}")
                 progress.update(task, description="✅ Virtual environment created")
             console.print(f"🐍 Virtual environment: {self.venv_path}")
             return True
+        except subprocess.TimeoutExpired as e:
+            raise Exception(f"Command timed out after {e.timeout} seconds")
         except Exception as e:
             console.print(f"❌ Error creating virtual environment: {e}")
             return False

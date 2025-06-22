@@ -7,6 +7,7 @@ import os
 import sys
 import click
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -202,8 +203,15 @@ def start(
     # Store files in context for the interactive menu
     ctx.obj['attached_files'] = list(files)
     
+    # Store environment manager in context
+    ctx.obj['env_manager'] = env_manager
+    
     # Start interactive mode
-    digy(repo_url, branch, context=ctx.obj)
+    digy(repo_url, branch)
+    
+    # Cleanup after digy completes
+    if env_manager.venv_path and os.path.exists(env_manager.venv_path):
+        shutil.rmtree(env_manager.venv_path, ignore_errors=True)
 
 # Make 'digy' default to 'digy start' for easier usage
 @main.command(hidden=True)
