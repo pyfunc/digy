@@ -265,17 +265,17 @@ class TestInteractiveMenu:
         """Test all menu actions can be executed"""
         # Map menu action names to their corresponding method names and return values
         actions_to_test = [
-            ("show_info", "show_repository_info", None),
-            ("view_readme", "view_readme", None),
-            ("setup_env", "setup_environment", None),
-            ("list_files", "list_python_files", None),
-            ("run_file", "run_python_file", None),
-            ("inspect_file", "inspect_file", None),
-            ("shell", "interactive_shell", None),
-            ("exit", None, False)  # Special case for exit action
+            ("show_info", "show_repository_info"),
+            ("view_readme", "view_readme"),
+            ("setup_environment", "setup_environment"),
+            ("list_python_files", "list_python_files"),
+            ("run_python_file", "run_python_file"),
+            ("inspect_file", "inspect_file"),
+            ("interactive_shell", "interactive_shell"),
+            ("exit", None)  # Special case for exit action
         ]
 
-        for action, method_name, expected_return in actions_to_test:
+        for action, method_name in actions_to_test:
             if action == "exit":
                 # Test exit action
                 result = self.menu.execute_action("exit")
@@ -284,9 +284,6 @@ class TestInteractiveMenu:
                 
             # Create a mock for the method
             with patch.object(self.menu, method_name) as mock_method:
-                # Set up the mock to return None (since these are void methods)
-                mock_method.return_value = None
-                
                 # Execute the action
                 result = self.menu.execute_action(action)
                 

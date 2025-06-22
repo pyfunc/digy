@@ -116,7 +116,8 @@ venv.bak/
 poetry.lock
 # Rope project settings
 .ropeproject
-
+scrape_results
+TODO.txt
 # mkdocs documentation
 /site
 

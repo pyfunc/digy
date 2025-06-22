@@ -2,52 +2,225 @@
 
 > **Note**: DIGY is in active development. Some features may be experimental.
 
+[![PyPI version](https://badge.fury.io/py/digy.svg)](https://badge.fury.io/py/digy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+DIGY is a powerful tool for executing Python code in various environments with minimal setup. It provides a consistent interface for running code locally, in Docker containers, in-memory, or on remote machines.
+
+## 🚀 Quick Links
+- [Features](#-features)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Examples](#-examples)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
+
 ## 🌟 Features
 
-- **Multi-Environment Execution**
-  - Local execution with virtual environments
-  - Docker container isolation (optional)
-  - RAM-based execution for maximum performance
-  - Remote execution support
-  - JVM execution environment
+### 🛠️ Multi-Environment Execution
+- **Local**: Run code in isolated virtual environments
+- **Docker**: Containerized execution for reproducibility
+- **RAM**: In-memory execution for maximum performance
+- **Remote**: Execute on remote machines via SSH
+- **JVM**: Run Java/Scala code with Python interop
 
-- **Interactive & Non-Interactive Modes**
-  - Rich terminal interface for interactive use
-  - Command-line support for automation
-  - Scriptable execution flows
+### 💻 Interactive & Scriptable
+- Rich terminal interface with auto-completion
+- Command-line automation support
+- Scriptable execution flows
+- Jupyter notebook integration
 
-- **Flexible Repository Loading**
-  - Direct Git cloning (requires Git)
-  - Automatic fallback to zip download if Git is not available
-  - Support for public and private repositories
-  - Branch and commit selection
+### 🔄 Flexible Code Loading
+- Direct Git repository cloning
+- Automatic zip download fallback
+- Support for private repositories
+- Branch/tag/commit selection
 
-- **File Management**
-  - Interactive file selection
-  - File attachment support
-  - Volume mounting for persistent storage
+### 📁 File & Data Management
+- Interactive file selection
+- File attachment support
+- Volume mounting for persistent data
+- Built-in data processing utilities
 
-- **Resource Management**
-  - Memory usage monitoring
-  - Automatic cleanup of temporary files
-  - Configurable resource limits
+### 🔒 Security & Authentication
+- Multiple authentication methods
+- Secure credential management
+- Environment-based configuration
+- Custom authentication providers
 
-## 🚀 Quick START
+### 📊 Monitoring & Debugging
+- Real-time resource usage
+- Detailed logging
+- Debug mode for troubleshooting
+- Performance metrics
+
+### 🔄 Integration & Extensibility
+- Plugin system for custom environments
+- Webhook support
+- REST API
+- CLI and programmatic interfaces
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.8 or higher
 - Git (recommended for direct Git operations)
 - Docker (optional, for containerized execution)
 - Poetry (for development)
 
 ### Installation
 
+#### Using pip (recommended)
 ```bash
-# Install with pip (recommended)
 pip install digy
+```
 
-# For development installation
+#### Development Installation
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/digy.git
+cd digy
+
+# Install with development dependencies
+pip install -e .[dev]
+
+# Or use Poetry
+poetry install
+```
+
+### Basic Usage
+
+```bash
+# Run a local script
+digy local path/to/script.py
+
+# Run in a Docker container
+digy docker --image python:3.9 path/to/script.py
+
+# Run in memory (fastest)
+digy ram path/to/script.py
+
+# Run on a remote machine
+digy remote user@example.com github.com/owner/repo path/to/script.py
+```
+
+## 📚 Documentation
+
+### Command Reference
+
+#### `digy local <script> [args...]`
+Run a script in a local environment.
+
+**Options:**
+- `--env PATH`: Path to Python virtual environment
+- `--python PATH`: Path to Python interpreter
+- `--cwd PATH`: Working directory
+- `--debug`: Enable debug output
+
+**Examples:**
+```bash
+# Basic usage
+digy local script.py
+
+# With arguments
+digy local script.py arg1 arg2
+
+# Specify Python version
+digy local --python python3.9 script.py
+```
+
+#### `digy docker [options] <script> [args...]`
+Run a script in a Docker container.
+
+**Options:**
+- `--image IMAGE`: Docker image to use (default: python:3.9-slim)
+- `--build`: Build Docker image from Dockerfile
+- `--dockerfile PATH`: Path to Dockerfile
+- `--no-cache`: Disable Docker cache
+- `--volume SRC:DST`: Mount a volume
+
+**Examples:**
+```bash
+# Basic usage
+digy docker script.py
+
+# Specify custom image
+digy docker --image tensorflow/tensorflow script.py
+
+# Mount volumes
+digy docker -v $(pwd)/data:/data script.py
+```
+
+#### `digy ram <script> [args...]`
+Run a script in memory for maximum performance.
+
+**Examples:**
+```bash
+# Basic usage
+digy ram script.py
+
+# With dependencies
+pip install -r requirements.txt
+digy ram script.py
+```
+
+#### `digy remote <user@host> <repo> <script> [args...]`
+Run a script on a remote machine.
+
+**Options:**
+- `--key PATH`: SSH private key
+- `--port PORT`: SSH port (default: 22)
+- `--ssh-args ARGS`: Additional SSH arguments
+
+**Examples:**
+```bash
+# Basic usage
+digy remote user@example.com github.com/owner/repo script.py
+
+# With custom SSH key
+digy remote --key ~/.ssh/id_rsa user@example.com github.com/owner/repo script.py
+```
+
+## 📦 Configuration
+
+DIGY can be configured using environment variables or a configuration file.
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DIGY_DEBUG` | `false` | Enable debug output |
+| `DIGY_CACHE_DIR` | `~/.cache/digy` | Cache directory |
+| `DIGY_CONFIG` | `~/.config/digy/config.toml` | Config file path |
+| `DIGY_DOCKER_IMAGE` | `python:3.9-slim` | Default Docker image |
+| `DIGY_PYTHON_BIN` | `python3` | Python interpreter |
+
+### Configuration File
+
+Create `~/.config/digy/config.toml`:
+
+```toml
+[core]
+debug = false
+cache_dir = "~/.cache/digy"
+
+[docker]
+image = "python:3.9-slim"
+build = false
+no_cache = false
+
+[remote]
+port = 22
+key = "~/.ssh/id_rsa"
+
+[local]
+python = "python3"
+```
 pip install -e .
 
 # Or using Poetry
@@ -339,141 +512,138 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
    ```
 4. Run tests:
    ```bash
-   pytest tests/
+   pytest
    ```
-5. Make your changes and submit a pull request
 
-## 📄 License
+5. Run linters:
+   ```bash
+   black .
+   flake8
+   mypy .
+   ```
+
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 📬 Contact
+
+- GitHub: [@yourusername](https://github.com/yourusername)
+- Twitter: [@yourhandle](https://twitter.com/yourhandle)
+- Email: your.email@example.com
+
 ## 🙏 Acknowledgments
 
-- Thanks to all contributors who have helped improve DIGY
-- Inspired by various container and development tools
-- Built with ❤️ by the PyFunc team
+- Thanks to all contributors who have helped make DIGY better
+- Inspired by tools like Docker, Git, and Jupyter
+- Built with ❤️ and Python
 
-### Configuration
+## 📄 Examples
 
-DIGY uses a manifest file (`digy/manifest.yml`) to configure Docker settings. You can override these settings either:
-1. In the manifest file
-2. Using environment variables
-3. Through command-line arguments
+### Basic Examples
 
-### Volume Types
-
-DIGY supports two types of volumes:
-
-1. **RAM Volumes**
-   - Stored in RAM for maximum speed
-   - Automatically cleaned up after use
-   - Size configurable in GB
-   - Example: `/tmp/digy_ram`
-
-2. **Local Volumes**
-   - Mount local directories into containers
-   - Can be read-only or read-write
-   - Useful for:
-     - Persistent data storage
-     - Local development
-     - Configuration files
-
-### Usage Examples
-
-1. **Basic Usage**
-```bash
-# Run a repository from GitHub
-digy local github.com/pyfunc/digy
-
-# Run with 4GB RAM
-digy local --ram-size 4 github.com/pyfunc/digy
+#### Hello World
+```python
+# hello_world.py
+print("Hello, DIGY!")
 ```
 
-2. **Local File Mount**
 ```bash
-# Mount local directory into container
-digy docker --mount ./data:/app/data:ro github.com/pyfunc/digy
+digy local hello_world.py
 ```
 
-3. **Custom Docker Configuration**
-```bash
-# Build and run with custom Dockerfile
-digy build -f Dockerfile .
-digy docker --image myapp:latest github.com/pyfunc/digy
+#### Environment Information
+```python
+# env_info.py
+import platform
+import sys
 
-# Or in one command
-digy docker --build -f Dockerfile github.com/pyfunc/digy
+print("Python Version:", sys.version)
+print("Platform:", platform.platform())
+print("Current Directory:", os.getcwd())
 ```
 
-### Performance Tips
-
-1. **RAM Size**
-   - Default: 2GB (`--ram-size 2`)
-   - Adjust based on project needs
-   - Example: `digy local --ram-size 4 github.com/user/repo`
-
-2. **Volume Mounts**
-   - Read-only mount: `--mount ./config:/app/config:ro`
-   - Read-write mount: `--mount ./data:/app/data:rw`
-   - RAM disk: `--ram-disk /cache`
-
-3. **Cleanup**
-   - Automatic cleanup: `--cleanup`
-   - Remove all data: `digy clean --all`
-   - List resources: `digy ls`
-
-### Environment Configuration
-
-DIGY supports configuration through environment variables. You can create a `.env` file in your project root based on the example:
-
 ```bash
-# Initialize with default configuration
-digy init
+digy local env_info.py
 ```
 
-Key environment variables:
+### Data Processing
 
-- `DIGY_RAM_SIZE`: RAM disk size in GB (default: 1)
-- `DIGY_RAM_PATH`: RAM disk mount path (default: /tmp/digy_ram)
-- `DIGY_DOCKER_IMAGE`: Default Docker image (default: python:3.12-slim)
-- `DIGY_LOCAL_VOLUMES`: Local volume mounts (format: host:container:mode)
-- `DIGY_RAM_VOLUMES`: RAM volume mounts
-- `DIGY_ENV_VARS`: Default environment variables
-- `DIGY_AUTO_CLEANUP`: Automatic cleanup after execution (true/false)
-- `DIGY_LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
+```python
+# data_analysis.py
+import pandas as pd
 
-Example `.env` file:
-```bash
-DIGY_RAM_SIZE=2
-DIGY_DOCKER_IMAGE=python:3.12-slim
-DIGY_LOCAL_VOLUMES=/app:/app:rw
-DIGY_LOG_LEVEL=INFO
+# Load data
+df = pd.read_csv('data.csv')
+
+# Process data
+summary = df.describe()
+print(summary)
+
+# Save results
+summary.to_csv('results/summary.csv')
 ```
 
-### Security
+```bash
+digy local data_analysis.py
+```
 
-- All execution happens in isolated containers
-- No changes are made to the host system
-- RAM volumes are ephemeral
-- Local mounts can be made read-only
-- Environment variables can be configured per project
+### Web Scraping
 
-### Troubleshooting
+```python
+# scraper.py
+import requests
+from bs4 import BeautifulSoup
 
-1. **Not enough RAM**
-   - Increase RAM size in manifest
-   - Use `--ram-size` flag
-   - Monitor container memory usage
+def scrape(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    return {
+        'title': soup.title.string,
+        'links': [a['href'] for a in soup.find_all('a', href=True)]
+    }
 
-2. **Volume permissions**
-   - Check Docker volume permissions
-   - Use `--user` flag to match UID
-   - Verify mount points are accessible
+if __name__ == '__main__':
+    result = scrape('https://example.com')
+    print(result)
+```
 
-3. **Resource cleanup**
-   - Use `--cleanup` flag
-   - Check Docker volume usage
-   - Monitor RAM disk usage
+```bash
+pip install requests beautifulsoup4
+digy local scraper.py
+```
+
+### Machine Learning
+
+```python
+# train.py
+from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+import joblib
+
+# Load data
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+# Train model
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
+
+# Evaluate
+score = model.score(X_test, y_test)
+print(f"Accuracy: {score:.2f}")
+
+# Save model
+joblib.dump(model, 'model.joblib')
+```
+
+```bash
+pip install scikit-learn joblib
+digy local train.py
+```
+
+For more examples, see the [examples](examples/) directory.
 
 ## 📦 Installation
 
@@ -557,183 +727,8 @@ digy jvm github.com/pyfunc/digy script.py
 - ⚡ **Szybkie ładowanie** - Pobieranie repozytoriów bezpośrednio do pamięci RAM (100MB bazowo)
 - 🔒 **Izolowane środowiska** - Automatyczne tworzenie virtual environment
 - 🎮 **Interaktywne menu** - Nawigacja strzałkami z pomocą
-- 🐍 **Uruchamianie kodu** - Wykonywanie plików Python z wyświetlaniem wyników
 - 📊 **Zarządzanie pamięcią** - Monitoring i kontrola użycia RAM
 - 🔍 **Inspekcja kodu** - Przeglądanie plików z podświetlaniem składni
-
-## 📦 Instalacja
-
-```bash
-# Instalacja z pip (gdy będzie dostępne)
-pip install digy
-
-# Lub instalacja z źródeł
-git clone https://github.com/pyfunc/digy
-cd digy
-poetry install
-```
-
-## 🛠️ Advanced Usage
-
-### Command Reference
-
-#### `digy local` - Run Python files locally
-```bash
-# Basic usage
-digy local github.com/pyfunc/digy script.py
-
-# With arguments
-digy local github.com/pyfunc/digy script.py --arg1 value1 --arg2 value2
-```
-
-#### `digy remote` - Run Python files on a remote host via SSH
-```bash
-digy remote user@host github.com/pyfunc/digy script.py
-```
-
-#### `digy docker` - Run Python files in a Docker container
-```bash
-digy docker --image python:3.12 github.com/pyfunc/digy script.py
-```
-
-#### `digy jvm` - Run Python files on JVM
-```bash
-digy jvm github.com/pyfunc/digy script.py
-```
-
-#### `digy local` - Run locally with interactive menu
-```bash
-digy local github.com/pyfunc/digy
-
-# Specify branch
-digy local github.com/pyfunc/digy --branch develop
-
-# Attach local files
-digy local github.com/pyfunc/digy --file config.json
-```
-
-#### Environment Management
-```bash
-# List available environments
-digy env list
-
-# Create new environment
-digy env create myenv --python=3.10
-
-# Activate environment
-digy env activate myenv
-```
-
-```bash
-# Uruchomienie w środowisku lokalnym
-digy local github.com/pyfunc/free-on-pypi
-
-# Uruchomienie w pamięci RAM (najszybsze)
-digy ram github.com/pyfunc/free-on-pypi
-
-# Uruchomienie w kontenerze Docker
-digy docker github.com/pyfunc/free-on-pypi
-
-# Dodatkowe opcje
-# Z określoną gałęzią
-digy local github.com/user/repo --branch develop
-
-# Szybkie uruchomienie konkretnego pliku
-digy ram github.com/pyfunc/free-on-pypi pypi.py --args "from_file"
-
-# Status i informacje
-digy status
-digy info
-```
-
-## 📋 Interaktywne Menu
-
-Po załadowaniu repozytorium DIGY wyświetli interaktywne menu z opcjami:
-
-```
-📋 Show Repository Info    - Informacje o repozytorium
-📖 View README            - Wyświetl plik README
-🔧 Setup Environment      - Skonfiguruj środowisko
-📁 List Python Files      - Lista plików Python
-🚀 Run Python File        - Uruchom plik Python
-🔍 Inspect File           - Zbadaj zawartość pliku
-💻 Interactive Shell      - Interaktywna powłoka Python
-🧹 Cleanup & Exit         - Wyczyść i wyjdź
-```
-
-### Nawigacja
-
-- **↑/↓** lub **j/k** - Poruszanie się po menu
-- **Enter** - Wybór opcji
-- **1-8** - Bezpośredni wybór numerem
-- **q** - Wyjście
-
-## 🔧 Przykład użycia z repozytorium free-on-pypi
-
-```python
-from digy import digy
-
-# Załaduj repozytorium lokalnie
-digy.local('github.com/pyfunc/free-on-pypi')
-
-# Lub w pamięci RAM
-digy.ram('github.com/pyfunc/free-on-pypi')
-
-# Albo w Dockerze
-digy.docker('github.com/pyfunc/free-on-pypi')
-```
-
-Po załadowaniu zobaczysz menu z opcjami uruchomienia:
-1. `pypi.py from_file` - Sprawdzenie nazw z pliku
-2. `pypi.py generator` - Generator kombinacji nazw
-3. `github.py from_file` - Sprawdzenie nazw na GitHub
-
-Każde uruchomienie pokaże:
-- Pełne wyjście konsoli
-- Błędy (jeśli wystąpią)
-- Pytanie o uruchomienie kolejnej komendy
-
-## 🎮 Funkcje interaktywne
-
-### Uruchamianie plików Python
-- Wybór pliku z listy
-- Podanie argumentów
-- Wyświetlenie pełnego wyjścia
-- Monitoring czasu wykonania
-
-### Inspekcja kodu
-- Podświetlanie składni
-- Informacje o pliku (linie, rozmiar)
-- Lista importów
-- Wykrywanie bloku `if __name__ == "__main__"`
-
-### Zarządzanie środowiskiem
-- Automatyczne tworzenie virtual environment
-- Instalacja requirements.txt
-- Instalacja pakietu w trybie deweloperskim
-- Monitoring pamięci RAM
-
-## 🔧 Konfiguracja
-
-### Zmienne środowiskowe
-
-```bash
-export DIGY_MEMORY_BASE=100    # Bazowa alokacja pamięci w MB
-export DIGY_TIMEOUT=300        # Timeout wykonania w sekundach
-```
-
-### Programowa konfiguracja
-
-```python
-from digy.loader import memory_manager
-
-# Zmień bazową alokację pamięci
-memory_manager.base_size_mb = 200
-
-# Sprawdź dostępną pamięć
-available = memory_manager.check_available_memory()
-print(f"Dostępne: {available} MB")
-```
 
 ## 📝 API Reference
 
