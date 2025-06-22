@@ -37,77 +37,53 @@ DIGY supports two types of volumes:
 
 1. **Basic Usage**
 ```bash
-# Run a remote project in RAM
-$ digy start github.com/pyfunc/digy
+# Run a repository from GitHub
+digy run github.com/pyfunc/digy
 
-# Run with custom RAM size
-$ DIGY_RAM_SIZE=4 digy start github.com/pyfunc/digy
+# Run with 4GB RAM
+digy run --ram-size 4 github.com/pyfunc/digy
 ```
 
 2. **Local File Mount**
 ```bash
-# Create a local project configuration
-$ cat > digy.yml << EOF
-projects:
-  my_project:
-    volumes:
-      - type: local
-        path: /app/data
-        source: ./data
-        readonly: true
-EOF
-
-# Run with local data
-$ digy start github.com/pyfunc/digy --config=digy.yml
+# Mount local directory into container
+digy run --mount ./data:/app/data:ro github.com/pyfunc/digy
 ```
 
 3. **Custom Docker Configuration**
 ```bash
-# Create custom Dockerfile
-$ cat > Dockerfile << EOF
-FROM python:3.12-slim
+# Build and run with custom Dockerfile
+digy build -f Dockerfile .
+digy run --image myapp:latest github.com/pyfunc/digy
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy local files
-COPY . /app
-
-# Install Python dependencies
-RUN pip install -r requirements.txt
-
-CMD ["python", "app.py"]
-EOF
-
-# Run with custom Dockerfile
-$ digy start github.com/pyfunc/digy --dockerfile=Dockerfile
+# Or in one command
+digy run --build -f Dockerfile github.com/pyfunc/digy
 ```
 
 ### Performance Tips
 
 1. **RAM Size**
-   - Default: 2GB
+   - Default: 2GB (`--ram-size 2`)
    - Adjust based on project needs
-   - Larger projects may need more RAM
+   - Example: `digy run --ram-size 4 github.com/user/repo`
 
-2. **Local Mounts**
-   - Use read-only mounts for configuration
-   - Use RAM volumes for temporary data
-   - Keep persistent data in local volumes
+2. **Volume Mounts**
+   - Read-only mount: `--mount ./config:/app/config:ro`
+   - Read-write mount: `--mount ./data:/app/data:rw`
+   - RAM disk: `--ram-disk /cache`
 
 3. **Cleanup**
-   - RAM volumes are automatically cleaned
-   - Local volumes persist between runs
-   - Use `--cleanup` to remove all data
+   - Automatic cleanup: `--cleanup`
+   - Remove all data: `digy clean --all`
+   - List resources: `digy ls`
 
 ### Environment Configuration
 
 DIGY supports configuration through environment variables. You can create a `.env` file in your project root based on the example:
 
 ```bash
-cp .env.example .env
+# Initialize with default configuration
+digy init
 ```
 
 Key environment variables:

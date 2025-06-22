@@ -10,8 +10,7 @@ import tempfile
 import shutil
 import json
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple
-from virtualenv import cli_run
+from typing import List, Dict, Any, Optional, Tuple
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -25,7 +24,7 @@ class Deployer:
 
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
-        self.venv_path = None
+        self.venv_path: Optional[str] = None
         self.python_files = []
         self.requirements_files = []
         self.setup_files = []

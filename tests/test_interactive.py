@@ -270,10 +270,10 @@ class TestInteractiveMenu:
         for action in actions_to_test:
             with patch.object(self.menu, action.replace('_', '_').replace('show', 'show_repository').replace('env',
                                                                                                              'environment')) as mock_method:
-                if hasattr(self.menu,
-                           action.replace('_', '_').replace('show', 'show_repository').replace('env', 'environment')):
-                    result = self.menu.execute_action(action)
-                    assert result is True
+                continue_execution = self.menu.execute_action(action)
+                mock_method.assert_called_once()
+                if action != "exit":
+                    assert continue_execution is True
 
     @patch('builtins.input')
     def test_get_user_input_normal(self, mock_input):
