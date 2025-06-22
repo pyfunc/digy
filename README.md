@@ -36,20 +36,23 @@ poetry install
 ### Podstawowe użycie
 
 ```python
-from digy import load
+from digy import digy
 
 # Załaduj repozytorium i uruchom interaktywne menu
-load('github.com/pyfunc/free-on-pypi')
+digy('github.com/pyfunc/free-on-pypi')
 ```
 
 ### Wiersz poleceń
 
 ```bash
-# Załaduj repozytorium
-digy load github.com/pyfunc/free-on-pypi
+# Proste uruchomienie (automatycznie wykrywa repo URL)
+digy github.com/pyfunc/free-on-pypi
+
+# Lub z komendą start
+digy start github.com/pyfunc/free-on-pypi
 
 # Z określoną gałęzią
-digy load github.com/user/repo --branch develop
+digy start github.com/user/repo --branch develop
 
 # Szybkie uruchomienie konkretnego pliku
 digy run github.com/pyfunc/free-on-pypi pypi.py --args "from_file"
@@ -84,10 +87,10 @@ Po załadowaniu repozytorium DIGY wyświetli interaktywne menu z opcjami:
 ## 🔧 Przykład użycia z repozytorium free-on-pypi
 
 ```python
-from digy import load
+from digy import digy
 
 # Załaduj repozytorium
-load('github.com/pyfunc/free-on-pypi')
+digy('github.com/pyfunc/free-on-pypi')
 ```
 
 Po załadowaniu zobaczysz menu z opcjami uruchomienia:
@@ -144,7 +147,7 @@ print(f"Dostępne: {available} MB")
 
 ## 📝 API Reference
 
-### `load(repo_url, branch='main')`
+### `digy(repo_url, branch='main')`
 Główna funkcja ładująca repozytorium i uruchamiająca interaktywne menu.
 
 **Parametry:**
@@ -177,7 +180,7 @@ deployer = Deployer(local_path)
 
 ### Programowe uruchamianie
 ```python
-from digy import load
+from digy import digy
 from digy.deployer import Deployer
 
 # Załaduj bez menu

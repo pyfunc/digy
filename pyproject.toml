@@ -20,6 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.31.0"
@@ -37,7 +38,6 @@ mypy = "^1.7.1"
 
 [tool.poetry.scripts]
 digy = "digy.cli:main"
-digy-load = "digy.loader:load_command"
 
 [build-system]
 requires = ["poetry-core"]
