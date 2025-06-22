@@ -113,14 +113,15 @@ class GitLoader:
         """Download repository to memory-based location"""
         try:
             repo_info = self.parse_repo_url(repo_url)
-            local_path = repo_info["local_path"]
             project_name = repo_info["name"]
 
-            # Skip RAM disk if we can't create it
-            use_ram_disk = os.getenv("DIGY_USE_RAM_DISK", "true").lower() == "true"
+            # Skip RAM disk for local repositories or if we don't have root
+            is_local = repo_info.get("is_local", False)
+            use_ram_disk = not is_local and os.getenv("DIGY_USE_RAM_DISK", "false").lower() == "true"
             ram_disk = None
+            local_path = repo_info["local_path"]
 
-            if use_ram_disk:
+            if use_ram_disk and not is_local:
                 try:
                     ram_size = int(
                         os.getenv(
@@ -128,16 +129,71 @@ class GitLoader:
                             self.manifest.get("config", {}).get("ram_size", 2),
                         )
                     )
-                    ram_disk = self.create_ram_disk(ram_size)
+                    # Test if we can create a RAM disk
+                    test_dir = "/tmp/digy_test_ram"
+                    os.makedirs(test_dir, exist_ok=True)
+                    try:
+                        subprocess.run(
+                            ["mount", "-t", "tmpfs", "-o", f"size=1M", "tmpfs", test_dir],
+                            check=True,
+                            capture_output=True
+                        )
+                        subprocess.run(["umount", test_dir], check=True)
+                        # If we get here, we can create RAM disks
+                        ram_disk = self.create_ram_disk(ram_size)
+                        local_path = os.path.join(ram_disk, project_name)
+                        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                    except (subprocess.CalledProcessError, PermissionError) as e:
+                        console.print(
+                            f"⚠️ Warning: Insufficient permissions for RAM disk. Using regular directory. Error: {e}"
+                        )
+                        use_ram_disk = False
+                    finally:
+                        if os.path.exists(test_dir):
+                            shutil.rmtree(test_dir, ignore_errors=True)
                 except Exception as e:
-                    console.print(f"⚠️ Warning: Could not create RAM disk: {e}")
-                    console.print("⚠️ Falling back to temporary directory")
-                    ram_disk = None
+                    console.print(
+                        f"⚠️ Warning: Could not create RAM disk: {e}. Using regular directory."
+                    )
+                    use_ram_disk = False
 
             # Get volume configuration
             volumes = self.get_volume_config(project_name)
 
-            # Try direct Git clone first (bypassing Docker)
+            # For local repositories, try direct filesystem copy first
+            if os.path.isdir(repo_url):
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=console,
+                ) as progress:
+                    task = progress.add_task("Copying local repository...", total=1)
+                    try:
+                        # Create target directory
+                        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                        
+                        # Copy the repository
+                        shutil.copytree(repo_url, local_path, symlinks=True)
+                        
+                        # If a specific branch is requested, check it out
+                        if branch and branch != "main":
+                            try:
+                                subprocess.run(
+                                    ["git", "checkout", branch],
+                                    cwd=local_path,
+                                    check=True,
+                                    capture_output=True
+                                )
+                            except subprocess.CalledProcessError:
+                                console.print(f"⚠️ Warning: Could not checkout branch '{branch}'. Using default branch.")
+                        
+                        progress.update(task, advance=1, description="✅ Repository copied")
+                        return local_path
+                    except Exception as e:
+                        console.print(f"❌ Failed to copy local repository: {e}")
+                        return None
+
+            # For remote repositories, try direct Git clone first (bypassing Docker)
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -157,12 +213,15 @@ class GitLoader:
                     temp_dir = tempfile.mkdtemp(prefix="digy_")
                     repo_dir = os.path.join(temp_dir, project_name)
 
+
                     # Clone the repository locally
                     clone_cmd = ["git", "clone", "--depth", "1"]
+
 
                     # Add branch if specified
                     if branch:
                         clone_cmd.extend(["--branch", branch])
+
 
                     # Add repository URL and target directory
                     clone_cmd.extend([repo_info["url"], repo_dir])
@@ -438,15 +497,39 @@ echo "Repository cloned successfully"
         """Parse repository URL and extract components.
 
         Args:
-            url: Repository URL to parse
+            url: Repository URL or local path to parse
 
         Returns:
             Dict containing URL components and local path
         """
+        # Handle local paths
+        if os.path.isdir(url):
+            repo_name = os.path.basename(os.path.abspath(url))
+            return {
+                "url": f"file://{os.path.abspath(url)}",
+                "name": repo_name,
+                "local_path": os.path.abspath(url),  # Use the actual path for local directories
+                "is_local": True,
+            }
+
+            
         # Handle SSH format (git@github.com:user/repo.git)
         if url.startswith("git@"):
             url = url.replace("git@", "https://").replace(":", "/")
-        # Ensure URL has a scheme
+            
+        # Handle local file URLs
+        if url.startswith("file://"):
+            local_path = url[7:]
+            if os.path.isdir(local_path):
+                repo_name = os.path.basename(os.path.abspath(local_path))
+                return {
+                    "url": url,
+                    "name": repo_name,
+                    "local_path": os.path.abspath(local_path),
+                    "is_local": True,
+                }
+                
+        # Handle remote URLs
         if not url.startswith(("http://", "https://")):
             url = f"https://{url}"
 
@@ -459,36 +542,45 @@ echo "Repository cloned successfully"
             "url": url,
             "name": repo_name,
             "local_path": str(Path(self.base_path) / repo_name),
+            "is_local": False,
         }
 
     def _clone_repository(
         self, repo_info: Dict[str, str], branch: str
     ) -> Optional[str]:
-        """Clone a repository with branch fallback logic.
+        """Clone or copy a repository with branch fallback logic.
 
         Args:
             repo_info: Dictionary containing repository info
             branch: Preferred branch to checkout
 
         Returns:
-            str: Path to cloned repository or None if failed
+            str: Path to cloned/copied repository or None if failed
         """
         local_path = repo_info["local_path"]
         project_name = repo_info["name"]
+        is_local = repo_info.get("is_local", False)
 
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task(f"Cloning {project_name}...", total=None)
+            task = progress.add_task(f"Processing {project_name}...", total=None)
 
             try:
+                # Handle local repositories
+                if is_local:
+                    progress.update(task, description=f"✅ Using local repository at {local_path}")
+                    return local_path
+
+                # Handle remote repositories
                 branches_to_try = [branch, "main", "master"]
                 repo = None
 
                 for branch_name in branches_to_try:
                     try:
+                        progress.update(task, description=f"Cloning branch '{branch_name}'...")
                         repo = Repo.clone_from(
                             repo_info["url"],
                             local_path,
@@ -496,7 +588,8 @@ echo "Repository cloned successfully"
                             depth=1,  # Shallow clone to save memory
                         )
                         break
-                    except Exception:
+                    except Exception as e:
+                        console.print(f"⚠️ Failed to clone branch '{branch_name}': {e}")
                         continue
 
                 if repo is None:
@@ -506,7 +599,7 @@ echo "Repository cloned successfully"
                 return local_path
 
             except Exception as e:
-                console.print(f"❌ Failed to clone repository: {e}")
+                console.print(f"❌ Failed to process repository: {e}")
                 return None
 
     def download_repo(self, repo_url: str, branch: str = "main") -> Optional[str]:

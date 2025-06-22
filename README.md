@@ -100,43 +100,85 @@ poetry install
 
 ### Basic Usage
 
+#### For Local Scripts (Recommended)
+
+For running local scripts directly, use Python directly:
+
 ```bash
-# Run a local script
-digy local examples/basic/hello_world.py
+# Run a local script directly with Python
+python -m examples.basic.hello_world
 
-# Run in a Docker container
-digy docker --image python:3.9 examples/basic/hello_world.py
-
-# Run in memory (fastest)
-digy ram examples/basic/hello_world.py
-
-# Run on a remote machine
-digy remote pi@raspberrypi github.com/pyfunc/digy examples/basic/hello_world.py
+# For machine learning example
+python -m examples.machine_learning.iris_classifier
 ```
+
+#### Using DIGY (Repository-based Execution)
+
+DIGY is designed to work with git repositories. To use DIGY:
+
+1. **Initialize a git repository** if you haven't already:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   ```
+
+2. **Run with DIGY**:
+   ```bash
+   # Start interactive mode
+   digy local .
+   
+   # Or specify the script directly (requires git repository)
+   digy run . examples/basic/hello_world.py
+   ```
+
+#### Common Issues
+
+If you see errors about missing manifest files, create a basic `digy.yaml`:
+```bash
+echo "python: 3.10" > digy.yaml
+```
+
+For "Failed to clone repository" errors, ensure:
+1. The directory is a git repository
+2. Remote repository is properly set up if using `digy run`
+3. You have proper git permissions for the repository
 
 ## 📚 Documentation
 
 ### Command Reference
 
-#### `digy local <script> [args...]`
-Run a script in a local environment.
+#### `digy local [REPO_URL]`
+Start an interactive session for a git repository.
 
 **Options:**
-- `--env PATH`: Path to Python virtual environment
-- `--python PATH`: Path to Python interpreter
+- `--python VERSION`: Python version to use (e.g., 3.10)
 - `--cwd PATH`: Working directory
 - `--debug`: Enable debug output
 
 **Examples:**
 ```bash
-# Basic usage
-digy local script.py
-
-# With arguments
-digy local script.py arg1 arg2
+# Start interactive mode in current directory
+digy local .
 
 # Specify Python version
-digy local --python python3.9 script.py
+digy local --python 3.10 .
+```
+
+#### `digy run <REPO_URL> <SCRIPT_PATH> [args...]`
+Run a specific script from a git repository.
+
+**Options:**
+- `--python VERSION`: Python version to use
+- `--debug`: Enable debug output
+
+**Examples:**
+```bash
+# Run a script from the current repository
+digy run . examples/basic/hello_world.py
+
+# With arguments
+digy run . examples/basic/script.py arg1 arg2
 ```
 
 #### `digy docker [options] <script> [args...]`
