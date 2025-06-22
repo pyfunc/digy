@@ -1,11 +1,10 @@
-"""
-Tests for DIGY loader module
-"""
+"""Tests for DIGY loader module."""
+
+import os
+import tempfile
+from unittest.mock import MagicMock, patch
 
 import pytest
-import tempfile
-import os
-from unittest.mock import patch, MagicMock
 
 from digy.loader import GitLoader, MemoryManager, digy
 
@@ -55,14 +54,14 @@ class TestGitLoader:
             assert loader.loaded_repos == {}
 
     def test_parse_repo_url(self):
-        """Test repository URL parsing"""
+        """Test repository URL parsing."""
         loader = GitLoader()
 
         # Test different URL formats
         test_cases = [
             ("github.com/user/repo", "https://github.com/user/repo"),
             ("https://github.com/user/repo", "https://github.com/user/repo"),
-            ("https://github.com/user/repo.git", "https://github.com/user/repo.git")
+            ("https://github.com/user/repo.git", "https://github.com/user/repo.git"),
         ]
 
         for input_url, expected_url in test_cases:
@@ -74,27 +73,29 @@ class TestGitLoader:
     @patch('git.Repo.clone_from')
     @patch('digy.loader.memory_manager')
     @patch('subprocess.run')
-    def test_download_repo_success(self, mock_run, mock_memory_manager, mock_clone):
-        """Test successful repository download"""
+    def test_download_repo_success(
+        self, mock_run, mock_memory_manager, mock_clone
+    ):
+        """Test successful repository download."""
         # Setup mocks
         mock_memory_manager.allocate.return_value = True
         mock_repo = MagicMock()
         mock_clone.return_value = mock_repo
         mock_run.return_value.returncode = 0
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             loader = GitLoader(temp_dir)
             loader._docker_client = None  # Mock no Docker available
             loader.manifest = {}  # Mock empty manifest
             loader.base_path = temp_dir  # Set base path for manifest
             loader.ram_path = temp_dir  # Set ram_path for the test
-            
+
             # Mock the clone_from to return a repo with working_dir
             mock_repo.working_dir = os.path.join(temp_dir, "repo")
             os.makedirs(mock_repo.working_dir, exist_ok=True)
-            
+
             result = loader.download_repo("github.com/user/repo")
-    
+
             assert result is not None
             assert result == os.path.join(temp_dir, "repo")
             assert "github.com/user/repo" in loader.loaded_repos

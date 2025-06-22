@@ -41,7 +41,8 @@ def analyze_data(input_file: str, output_dir: str = 'output') -> None:
     # Basic analysis
     print("\n📈 Basic Statistics:")
     stats = df.describe()
-    print(stats)
+    with pd.option_context('display.max_columns', None, 'display.width', 120):
+        print(stats)
 
     # Save basic statistics to a file
     stats_file = os.path.join(output_dir, 'statistics.txt')
@@ -57,10 +58,15 @@ def analyze_data(input_file: str, output_dir: str = 'output') -> None:
         for col in numeric_cols:
             try:
                 plt.figure(figsize=(10, 6))
-                df[col].plot(kind='hist', bins=20, 
-                           title=f'{col} Distribution')
-                plot_file = os.path.join(output_dir, 
-                                      f'{col}_distribution.png')
+                df[col].plot(
+                    kind='hist',
+                    bins=20,
+                    title=f'{col} Distribution'
+                )
+                plot_file = os.path.join(
+                    output_dir,
+                    f'{col}_distribution.png'
+                )
                 plt.savefig(plot_file)
                 plt.close()
                 print(f"✅ Saved {col} distribution plot to {plot_file}")
@@ -105,6 +111,8 @@ Usage with DIGY:
     digy local . examples/data_processing/data_analyzer.py --input-file sample_data.csv --output-dir analysis_results
 """
     print(usage)
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 1 or '--help' in sys.argv or '-h' in sys.argv:

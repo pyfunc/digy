@@ -1,12 +1,11 @@
-"""
-Tests for DIGY interactive module
-"""
+"""Tests for DIGY interactive module."""
+
+import os
+import tempfile
+from io import StringIO
+from unittest.mock import MagicMock, patch
 
 import pytest
-import tempfile
-import os
-from unittest.mock import patch, MagicMock
-from io import StringIO
 
 from digy.interactive import InteractiveMenu
 
@@ -23,13 +22,11 @@ class TestInteractiveMenu:
         self.mock_deployer.setup_files = ["setup.py"]
 
         self.readme_path = os.path.join(self.temp_dir, "README.md")
-        with open(self.readme_path, 'w') as f:
+        with open(self.readme_path, "w") as f:
             f.write("# Test README\nThis is a test repository.")
 
         self.menu = InteractiveMenu(
-            self.temp_dir,
-            self.mock_deployer,
-            self.readme_path
+            self.temp_dir, self.mock_deployer, self.readme_path
         )
 
     def test_interactive_menu_initialization(self):
@@ -43,8 +40,14 @@ class TestInteractiveMenu:
     def test_setup_menu(self):
         """Test menu setup"""
         expected_actions = [
-            "show_info", "view_readme", "setup_env", "list_files",
-            "run_file", "inspect_file", "shell", "exit"
+            "show_info",
+            "view_readme",
+            "setup_env",
+            "list_files",
+            "run_file",
+            "inspect_file",
+            "shell",
+            "exit",
         ]
 
         actual_actions = [item["action"] for item in self.menu.menu_items]

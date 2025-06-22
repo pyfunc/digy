@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Web Scraping Example for DIGY.
 
-This script demonstrates how to perform web scraping using requests and BeautifulSoup.
-It fetches data from a website and extracts useful information.
+This script demonstrates how to perform web scraping using requests and
+BeautifulSoup. It fetches data from a website and extracts useful information.
 
 Usage with DIGY:
     digy local . examples/web_scraping/website_scraper.py --url https://example.com
@@ -13,18 +13,20 @@ import datetime
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
+
+
 def is_valid_url(url: str) -> bool:
     """Check if a URL is valid.
-    
+
     Args:
         url: The URL to validate
-        
+
     Returns:
         bool: True if URL is valid, False otherwise
     """
@@ -35,6 +37,8 @@ def is_valid_url(url: str) -> bool:
         return all([result.scheme, result.netloc])
     except (ValueError, AttributeError):
         return False
+
+
 
 def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
     """Fetch a webpage and extract all links.
@@ -50,10 +54,14 @@ def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
         return {"status": "error", "error": "Invalid URL"}
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-                     'AppleWebKit/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,'
-                 ',image/webp,*/*;q=0.8',
+        'User-Agent': (
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+            'AppleWebKit/537.36'
+        ),
+        'Accept': (
+            'text/html,application/xhtml+xml,application/xml;q=0.9,'
+            'image/webp,*/*;q=0.8'
+        ),
         'Accept-Language': 'en-US,en;q=0.5',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
@@ -89,6 +97,7 @@ def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
         # Extract all unique links
         seen_links = set()
         links = []
+        base_domain = urlparse(url).netloc
 
         for link in soup.find_all('a', href=True):
             if len(links) >= max_links:
@@ -104,11 +113,11 @@ def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
 
             if is_valid_url(full_url) and full_url not in seen_links:
                 seen_links.add(full_url)
-                link_text = link.get_text(strip=True)[:150]  # Truncate long text
+                link_text = link.get_text(strip=True)[:150]  # Truncate text
                 links.append({
                     'url': full_url,
                     'text': link_text,
-                    'external': urlparse(full_url).netloc != urlparse(url).netloc
+                    'external': urlparse(full_url).netloc != base_domain
                 })
 
         return {
@@ -129,6 +138,8 @@ def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
             'status': 'error',
             'error': error_msg
         }
+
+
 
 def save_results(data: Dict[str, Any], output_dir: str = 'output') -> str:
     """Save scraping results to a JSON file.

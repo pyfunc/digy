@@ -1,12 +1,11 @@
-"""
-Tests for DIGY deployer module
-"""
+"""Tests for DIGY deployer module."""
 
 import os
-import pytest
-import tempfile
 import subprocess
-from unittest.mock import patch, MagicMock, call
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from digy.deployer import Deployer
 
@@ -21,7 +20,7 @@ class TestDeployer:
 
     def teardown_method(self):
         """Cleanup test environment"""
-        if hasattr(self, 'deployer') and self.deployer.venv_path:
+        if hasattr(self, "deployer") and self.deployer.venv_path:
             self.deployer.cleanup()
 
     def test_deployer_initialization(self):
@@ -41,7 +40,7 @@ class TestDeployer:
             "requirements.txt",
             "setup.py",
             "subdir/helper.py",
-            "README.md"
+            "README.md",
         ]
 
         for file_path in test_files:
@@ -54,8 +53,12 @@ class TestDeployer:
         self.deployer.discover_files()
 
         # Convert to sets for easier comparison
-        python_files = set(os.path.normpath(f) for f in self.deployer.python_files)
-        requirements_files = set(os.path.normpath(f) for f in self.deployer.requirements_files)
+        python_files = set(
+            os.path.normpath(f) for f in self.deployer.python_files
+        )
+        requirements_files = set(
+            os.path.normpath(f) for f in self.deployer.requirements_files
+        )
 
         # Check discovered files
         assert len(python_files) >= 3
@@ -86,10 +89,10 @@ class TestDeployer:
 
         python_exe = self.deployer.get_python_executable()
 
-        if os.name == 'nt':  # Windows
-            assert python_exe.endswith('python.exe')
+        if os.name == "nt":  # Windows
+            assert python_exe.endswith("python.exe")
         else:  # Unix/Linux/macOS
-            assert python_exe.endswith('python')
+            assert python_exe.endswith("python")
         assert "/fake/venv" in python_exe
 
     def test_get_pip_executable(self):
