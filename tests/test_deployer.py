@@ -46,16 +46,14 @@ class TestDeployer:
         for file_path in test_files:
             full_path = os.path.join(self.temp_dir, file_path)
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
-            with open(full_path, 'w') as f:
+            with open(full_path, "w") as f:
                 f.write("# Test content")
 
         # Re-discover files
         self.deployer.discover_files()
 
         # Convert to sets for easier comparison
-        python_files = set(
-            os.path.normpath(f) for f in self.deployer.python_files
-        )
+        python_files = set(os.path.normpath(f) for f in self.deployer.python_files)
         requirements_files = set(
             os.path.normpath(f) for f in self.deployer.requirements_files
         )
@@ -68,7 +66,7 @@ class TestDeployer:
         assert os.path.normpath("requirements.txt") in requirements_files
         # setup_files might be empty if not implemented, so we don't check it
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_create_virtual_environment_success(self, mock_run):
         """Test successful virtual environment creation"""
         mock_run.return_value.returncode = 0
@@ -76,7 +74,7 @@ class TestDeployer:
         assert self.deployer.venv_path is not None
         assert mock_run.call_count == 1
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_create_virtual_environment_failure(self, mock_run):
         """Test virtual environment creation failure"""
         mock_run.return_value.returncode = 1
@@ -101,18 +99,18 @@ class TestDeployer:
 
         pip_exe = self.deployer.get_pip_executable()
 
-        if os.name == 'nt':  # Windows
-            assert pip_exe.endswith('pip.exe')
+        if os.name == "nt":  # Windows
+            assert pip_exe.endswith("pip.exe")
         else:  # Unix/Linux/macOS
-            assert pip_exe.endswith('pip')
+            assert pip_exe.endswith("pip")
         assert "/fake/venv" in pip_exe
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_install_requirements_success(self, mock_run):
         """Test successful requirements installation"""
         # Create requirements file
         req_file = os.path.join(self.temp_dir, "requirements.txt")
-        with open(req_file, 'w') as f:
+        with open(req_file, "w") as f:
             f.write("requests==2.25.1\n")
 
         self.deployer.discover_files()
@@ -126,12 +124,12 @@ class TestDeployer:
         assert result is True
         mock_run.assert_called()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_install_requirements_failure(self, mock_run):
         """Test requirements installation failure"""
         # Create requirements file
         req_file = os.path.join(self.temp_dir, "requirements.txt")
-        with open(req_file, 'w') as f:
+        with open(req_file, "w") as f:
             f.write("nonexistent-package==999.999.999\n")
 
         self.deployer.discover_files()
@@ -150,12 +148,12 @@ class TestDeployer:
         result = self.deployer.install_requirements()
         assert result is True  # Should succeed if no requirements
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_run_python_file_success(self, mock_run):
         """Test successful Python file execution"""
         # Create test Python file
         test_file = os.path.join(self.temp_dir, "test.py")
-        with open(test_file, 'w') as f:
+        with open(test_file, "w") as f:
             f.write('print("Hello World")')
 
         self.deployer.venv_path = "/fake/venv"
@@ -171,12 +169,12 @@ class TestDeployer:
         assert "Hello World" in stdout
         assert stderr == ""
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_run_python_file_failure(self, mock_run):
         """Test Python file execution failure"""
         # Create test Python file with error
         test_file = os.path.join(self.temp_dir, "error.py")
-        with open(test_file, 'w') as f:
+        with open(test_file, "w") as f:
             f.write('raise ValueError("Test error")')
 
         # Mock successful environment setup
@@ -192,9 +190,12 @@ class TestDeployer:
         success, stdout, stderr = self.deployer.run_python_file("error.py")
 
         assert success is False
-        assert "ValueError: Test error" in stderr or "Failed to set up environment" in stderr
+        assert (
+            "ValueError: Test error" in stderr
+            or "Failed to set up environment" in stderr
+        )
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_run_python_file_not_found(self, mock_run):
         """Test running non-existent Python file"""
         # Mock successful environment setup
@@ -205,14 +206,16 @@ class TestDeployer:
         success, stdout, stderr = self.deployer.run_python_file("nonexistent.py")
 
         assert success is False
-        assert any(msg in stderr for msg in ["File not found", "Failed to set up environment"])
+        assert any(
+            msg in stderr for msg in ["File not found", "Failed to set up environment"]
+        )
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_run_python_file_timeout(self, mock_run):
         """Test Python file execution timeout"""
         test_file = os.path.join(self.temp_dir, "timeout.py")
-        with open(test_file, 'w') as f:
-            f.write('import time; time.sleep(1000)')
+        with open(test_file, "w") as f:
+            f.write("import time; time.sleep(1000)")
 
         # Mock successful environment setup
         self.deployer.venv_path = "/fake/venv"
@@ -225,13 +228,15 @@ class TestDeployer:
         success, stdout, stderr = self.deployer.run_python_file("timeout.py")
 
         assert success is False
-        assert any(msg in stderr for msg in ["timed out", "Failed to set up environment"])
+        assert any(
+            msg in stderr for msg in ["timed out", "Failed to set up environment"]
+        )
 
     def test_get_file_info(self):
         """Test file information extraction"""
         # Create test Python file
         test_file = os.path.join(self.temp_dir, "info_test.py")
-        content = '''#!/usr/bin/env python3
+        content = """#!/usr/bin/env python3
 import os
 import sys
 from pathlib import Path
@@ -241,8 +246,8 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
-        with open(test_file, 'w') as f:
+"""
+        with open(test_file, "w") as f:
             f.write(content)
 
         info = self.deployer.get_file_info("info_test.py")

@@ -20,7 +20,6 @@ import requests
 from bs4 import BeautifulSoup
 
 
-
 def is_valid_url(url: str) -> bool:
     """Check if a URL is valid.
 
@@ -39,7 +38,6 @@ def is_valid_url(url: str) -> bool:
         return False
 
 
-
 def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
     """Fetch a webpage and extract all links.
 
@@ -54,94 +52,86 @@ def get_page_links(url: str, max_links: int = 20) -> Dict[str, Any]:
         return {"status": "error", "error": "Invalid URL"}
 
     headers = {
-        'User-Agent': (
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-            'AppleWebKit/537.36'
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " + "AppleWebKit/537.36"
         ),
-        'Accept': (
-            'text/html,application/xhtml+xml,application/xml;q=0.9,'
-            'image/webp,*/*;q=0.8'
+        "Accept": (
+            "text/html,application/xhtml+xml,application/xml;q=0.9,"
+            "image/webp,*/*;q=0.8"
         ),
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
     }
 
     try:
         print(f"🌐 Fetching {url}")
         response = requests.get(
-            url,
-            headers=headers,
-            timeout=15,
-            allow_redirects=True,
-            verify=True
+            url, headers=headers, timeout=15, allow_redirects=True, verify=True
         )
         response.raise_for_status()
 
         # Check content type to ensure it's HTML
-        content_type = response.headers.get('content-type', '').lower()
-        if 'text/html' not in content_type:
+        content_type = response.headers.get("content-type", "").lower()
+        if "text/html" not in content_type:
             return {
-                'url': url,
-                'status': 'error',
-                'error': f'Expected HTML, got {content_type}'
+                "url": url,
+                "status": "error",
+                "error": f"Expected HTML, got {content_type}",
             }
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, "html.parser")
 
         # Extract page metadata
         title = soup.title.string if soup.title else "No title found"
-        meta_desc = soup.find('meta', attrs={'name': 'description'})
-        description = meta_desc['content'] if meta_desc else "No description"
+        meta_desc = soup.find("meta", attrs={"name": "description"})
+        description = meta_desc["content"] if meta_desc else "No description"
 
         # Extract all unique links
         seen_links = set()
         links = []
         base_domain = urlparse(url).netloc
 
-        for link in soup.find_all('a', href=True):
+        for link in soup.find_all("a", href=True):
             if len(links) >= max_links:
                 break
 
-            href = link['href'].strip()
-            if not href or href.startswith(('javascript:', 'mailto:', 'tel:')):
+            href = link["href"].strip()
+            if not href or href.startswith(("javascript:", "mailto:", "tel:")):
                 continue
 
             # Convert relative URLs to absolute
             full_url = urljoin(url, href)
-            full_url = full_url.split('#')[0]  # Remove fragment
+            full_url = full_url.split("#")[0]  # Remove fragment
 
             if is_valid_url(full_url) and full_url not in seen_links:
                 seen_links.add(full_url)
                 link_text = link.get_text(strip=True)[:150]  # Truncate text
-                links.append({
-                    'url': full_url,
-                    'text': link_text,
-                    'external': urlparse(full_url).netloc != base_domain
-                })
+                links.append(
+                    {
+                        "url": full_url,
+                        "text": link_text,
+                        "external": urlparse(full_url).netloc != base_domain,
+                    }
+                )
 
         return {
-            'url': url,
-            'title': title,
-            'description': description,
-            'status': 'success',
-            'links_found': len(links),
-            'links': links
+            "url": url,
+            "title": title,
+            "description": description,
+            "status": "success",
+            "links_found": len(links),
+            "links": links,
         }
 
     except requests.RequestException as e:
         error_msg = str(e)
-        if hasattr(e, 'response') and e.response is not None:
+        if hasattr(e, "response") and e.response is not None:
             error_msg = f"HTTP {e.response.status_code}: {error_msg}"
-        return {
-            'url': url,
-            'status': 'error',
-            'error': error_msg
-        }
+        return {"url": url, "status": "error", "error": error_msg}
 
 
-
-def save_results(data: Dict[str, Any], output_dir: str = 'output') -> str:
+def save_results(data: Dict[str, Any], output_dir: str = "output") -> str:
     """Save scraping results to a JSON file.
 
     Args:
@@ -155,46 +145,45 @@ def save_results(data: Dict[str, Any], output_dir: str = 'output') -> str:
     output_path.mkdir(parents=True, exist_ok=True)
 
     # Create a safe filename from URL
-    domain = urlparse(data.get('url', 'unknown')).netloc.replace('.', '_')
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    domain = urlparse(data.get("url", "unknown")).netloc.replace(".", "_")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"scrape_{domain}_{timestamp}.json"
     filepath = output_path / filename
 
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
     print(f"💾 Results saved to {filepath}")
     return str(filepath)
 
+
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments.
-    
+
     Returns:
         argparse.Namespace: Parsed command line arguments
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Web Scraper')
+    parser = argparse.ArgumentParser(description="Web Scraper")
     parser.add_argument(
-        '--url',
-        required=True,
-        help='URL to scrape (e.g., https://example.com)'
+        "--url", required=True, help="URL to scrape (e.g., https://example.com)"
     )
     parser.add_argument(
-        '--output-dir',
-        default='scrape_results',
-        help='Directory to save output files (default: scrape_results)'
+        "--output-dir",
+        default="scrape_results",
+        help="Directory to save output files (default: scrape_results)",
     )
     parser.add_argument(
-        '--max-links',
+        "--max-links",
         type=int,
         default=20,
-        help='Maximum number of links to extract (default: 20)'
+        help="Maximum number of links to extract (default: 20)",
     )
 
     # Handle DIGY-style arguments (after --)
-    if '--' in sys.argv:
-        args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
+    if "--" in sys.argv:
+        args = parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
     else:
         args = parser.parse_args()
 
@@ -203,11 +192,11 @@ def parse_arguments() -> argparse.Namespace:
 
 def print_summary(results: Dict[str, Any]) -> None:
     """Print a summary of the scraping results.
-    
+
     Args:
         results: Dictionary containing scraping results
     """
-    if results.get('status') == 'error':
+    if results.get("status") == "error":
         print(f"❌ Error: {results.get('error', 'Unknown error')}")
         return
 
@@ -217,32 +206,33 @@ def print_summary(results: Dict[str, Any]) -> None:
     print(f"🔗 Links found: {results.get('links_found', 0)}")
     print(f"📄 Description: {results.get('description', 'N/A')}")
 
-    if 'links' in results and results['links']:
+    if "links" in results and results["links"]:
         print("\n🔗 Top links:")
-        for i, link in enumerate(results['links'][:5], 1):
+        for i, link in enumerate(results["links"][:5], 1):
             print(f"  {i}. {link['url']}")
-            if link.get('text'):
+            if link.get("text"):
                 print(f"     {link.get('text')}")
+
 
 def main() -> None:
     """Run the web scraper with command line arguments."""
     args = parse_arguments()
-    
+
     print(f"🔍 Starting web scraping of {args.url}")
     print(f"📂 Output directory: {args.output_dir}")
     print(f"🔗 Maximum links to extract: {args.max_links}")
-    
+
     try:
         # Scrape the webpage
         results = get_page_links(args.url, max_links=args.max_links)
-        
+
         # Save and display results
-        if results.get('status') != 'error':
+        if results.get("status") != "error":
             output_file = save_results(results, args.output_dir)
             print(f"✅ Scraping complete! Results saved to {output_file}")
-        
+
         print_summary(results)
-        
+
     except KeyboardInterrupt:
         print("\n🛑 Operation cancelled by user")
         sys.exit(1)

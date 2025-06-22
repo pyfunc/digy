@@ -70,12 +70,10 @@ class TestGitLoader:
             assert "name" in result
             assert "local_path" in result
 
-    @patch('git.Repo.clone_from')
-    @patch('digy.loader.memory_manager')
-    @patch('subprocess.run')
-    def test_download_repo_success(
-        self, mock_run, mock_memory_manager, mock_clone
-    ):
+    @patch("git.Repo.clone_from")
+    @patch("digy.loader.memory_manager")
+    @patch("subprocess.run")
+    def test_download_repo_success(self, mock_run, mock_memory_manager, mock_clone):
         """Test successful repository download."""
         # Setup mocks
         mock_memory_manager.allocate.return_value = True
@@ -100,7 +98,7 @@ class TestGitLoader:
             assert result == os.path.join(temp_dir, "repo")
             assert "github.com/user/repo" in loader.loaded_repos
 
-    @patch('digy.loader.memory_manager')
+    @patch("digy.loader.memory_manager")
     def test_download_repo_memory_failure(self, mock_memory_manager):
         """Test repository download failure due to insufficient memory"""
         mock_memory_manager.allocate.return_value = False
@@ -130,9 +128,9 @@ class TestGitLoader:
 class TestDigyFunction:
     """Test main digy function"""
 
-    @patch('digy.loader.InteractiveMenu')
-    @patch('digy.loader.Deployer')
-    @patch('digy.loader.loader_instance')
+    @patch("digy.loader.InteractiveMenu")
+    @patch("digy.loader.Deployer")
+    @patch("digy.loader.loader_instance")
     def test_digy_function(self, mock_loader, mock_deployer_class, mock_menu_class):
         """Test main digy function"""
         # Setup mocks
@@ -146,7 +144,9 @@ class TestDigyFunction:
         result = digy("github.com/user/repo")
 
         # Verify calls
-        mock_loader.download_repo.assert_called_once_with("github.com/user/repo", "main")
+        mock_loader.download_repo.assert_called_once_with(
+            "github.com/user/repo", "main"
+        )
         mock_deployer_class.assert_called_once_with("/fake/path")
         mock_menu_class.assert_called_once()
         mock_menu.run.assert_called_once()
@@ -154,7 +154,7 @@ class TestDigyFunction:
 
         assert result == "/fake/path"
 
-    @patch('digy.loader.loader_instance')
+    @patch("digy.loader.loader_instance")
     def test_digy_function_download_failure(self, mock_loader):
         """Test digy function when download fails"""
         mock_loader.download_repo.return_value = None

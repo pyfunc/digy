@@ -3,18 +3,19 @@ Application deployer for DIGY
 Handles Python application deployment in isolated environments
 """
 
-import os
-import sys
-import subprocess
-import tempfile
-import shutil
 import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
 from rich.console import Console
 from rich.panel import Panel
-from rich.syntax import Syntax
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.syntax import Syntax
 
 console = Console()
 
@@ -34,18 +35,26 @@ class Deployer:
         """Discover Python files and configuration files in repository"""
         for root, dirs, files in os.walk(self.repo_path):
             # Skip hidden directories and common build directories
-            dirs[:] = [d for d in dirs if
-                       not d.startswith('.') and d not in ['__pycache__', 'build', 'dist', 'node_modules']]
+            dirs[:] = [
+                d
+                for d in dirs
+                if not d.startswith(".")
+                and d not in ["__pycache__", "build", "dist", "node_modules"]
+            ]
 
             for file in files:
                 file_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_path, self.repo_path)
 
-                if file.endswith('.py'):
+                if file.endswith(".py"):
                     self.python_files.append(rel_path)
-                elif file in ['requirements.txt', 'requirements-dev.txt', 'requirements-test.txt']:
+                elif file in [
+                    "requirements.txt",
+                    "requirements-dev.txt",
+                    "requirements-test.txt",
+                ]:
                     self.requirements_files.append(rel_path)
-                elif file in ['setup.py', 'setup.cfg', 'pyproject.toml']:
+                elif file in ["setup.py", "setup.cfg", "pyproject.toml"]:
                     self.setup_files.append(rel_path)
 
     def create_virtual_environment(self) -> bool:
@@ -53,19 +62,21 @@ class Deployer:
         try:
             self.venv_path = tempfile.mkdtemp(prefix="digy_venv_")
             with Progress(
-                    SpinnerColumn(),
-                    TextColumn("[progress.description]{task.description}"),
-                    console=console
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
             ) as progress:
                 task = progress.add_task("Creating virtual environment...", total=None)
                 # Use subprocess to create virtualenv
                 result = subprocess.run(
-                    [sys.executable, '-m', 'venv', self.venv_path],
+                    [sys.executable, "-m", "venv", self.venv_path],
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
                 if result.returncode != 0:
-                    console.print(f"❌ Failed to create virtual environment: {result.stderr}")
+                    console.print(
+                        f"❌ Failed to create virtual environment: {result.stderr}"
+                    )
                     self.cleanup(force=True)
                     return False
                 progress.update(task, description="✅ Virtual environment created")
@@ -82,17 +93,17 @@ class Deployer:
 
     def get_python_executable(self) -> str:
         """Get Python executable path in virtual environment"""
-        if os.name == 'nt':  # Windows
-            return os.path.join(self.venv_path, 'Scripts', 'python.exe')
+        if os.name == "nt":  # Windows
+            return os.path.join(self.venv_path, "Scripts", "python.exe")
         else:  # Unix/Linux/macOS
-            return os.path.join(self.venv_path, 'bin', 'python')
+            return os.path.join(self.venv_path, "bin", "python")
 
     def get_pip_executable(self) -> str:
         """Get pip executable path in virtual environment"""
-        if os.name == 'nt':  # Windows
-            return os.path.join(self.venv_path, 'Scripts', 'pip.exe')
+        if os.name == "nt":  # Windows
+            return os.path.join(self.venv_path, "Scripts", "pip.exe")
         else:  # Unix/Linux/macOS
-            return os.path.join(self.venv_path, 'bin', 'pip')
+            return os.path.join(self.venv_path, "bin", "pip")
 
     def install_requirements(self) -> bool:
         """Install requirements in virtual environment"""
@@ -107,9 +118,12 @@ class Deployer:
                 req_path = os.path.join(self.repo_path, req_file)
                 console.print(f"📦 Installing requirements from: {req_file}")
 
-                result = subprocess.run([
-                    pip_executable, 'install', '-r', req_path
-                ], capture_output=True, text=True, cwd=self.repo_path)
+                result = subprocess.run(
+                    [pip_executable, "install", "-r", req_path],
+                    capture_output=True,
+                    text=True,
+                    cwd=self.repo_path,
+                )
 
                 if result.returncode != 0:
                     console.print(f"❌ Failed to install {req_file}:")
@@ -133,9 +147,12 @@ class Deployer:
             pip_executable = self.get_pip_executable()
 
             console.print("📦 Installing package in development mode...")
-            result = subprocess.run([
-                pip_executable, 'install', '-e', '.'
-            ], capture_output=True, text=True, cwd=self.repo_path)
+            result = subprocess.run(
+                [pip_executable, "install", "-e", "."],
+                capture_output=True,
+                text=True,
+                cwd=self.repo_path,
+            )
 
             if result.returncode != 0:
                 console.print("❌ Failed to install package:")
@@ -150,7 +167,9 @@ class Deployer:
             console.print(f"❌ Error installing package: {e}")
             return False
 
-    def run_python_file(self, file_path: str, args: List[str] = None) -> Tuple[bool, str, str]:
+    def run_python_file(
+        self, file_path: str, args: List[str] = None
+    ) -> Tuple[bool, str, str]:
         """Run a Python file in the virtual environment"""
         try:
             if not self.setup_environment():
@@ -162,11 +181,13 @@ class Deployer:
                 return False, "", f"File not found: {file_path}"
 
             cmd = [str(self.get_python_executable()), full_path] + (args or [])
-            result = subprocess.run(cmd, cwd=self.repo_path, capture_output=True, text=True, timeout=300)
-            
+            result = subprocess.run(
+                cmd, cwd=self.repo_path, capture_output=True, text=True, timeout=300
+            )
+
             if result.returncode != 0:
                 return False, result.stdout, result.stderr
-            
+
             return True, result.stdout, result.stderr
 
         except subprocess.TimeoutExpired as e:
@@ -201,12 +222,12 @@ class Deployer:
             "size": 0,
             "lines": 0,
             "has_main": False,
-            "imports": []
+            "imports": [],
         }
 
         if info["exists"]:
             try:
-                with open(full_path, 'r', encoding='utf-8') as f:
+                with open(full_path, "r", encoding="utf-8") as f:
                     content = f.read()
                     info["size"] = len(content)
                     info["lines"] = len(content.splitlines())
@@ -215,7 +236,7 @@ class Deployer:
                     # Simple import detection
                     for line in content.splitlines():
                         line = line.strip()
-                        if line.startswith(('import ', 'from ')):
+                        if line.startswith(("import ", "from ")):
                             info["imports"].append(line)
             except Exception:
                 pass
@@ -224,7 +245,7 @@ class Deployer:
 
     def cleanup(self, force: bool = False):
         """Clean up virtual environment
-        
+
         Args:
             force: If True, clean up even if the environment is still active
         """
@@ -234,8 +255,10 @@ class Deployer:
             if os.path.exists(python_executable):
                 try:
                     # Check if any processes are using the Python executable
-                    for proc in psutil.process_iter(['pid', 'name', 'exe']):
-                        if proc.info['exe'] and proc.info['exe'].startswith(self.venv_path):
+                    for proc in psutil.process_iter(["pid", "name", "exe"]):
+                        if proc.info["exe"] and proc.info["exe"].startswith(
+                            self.venv_path
+                        ):
                             console.print("⚠️ Virtual environment is still in use")
                             return
                 except (psutil.NoSuchProcess, psutil.AccessDenied):

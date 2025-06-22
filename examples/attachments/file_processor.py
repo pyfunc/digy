@@ -27,8 +27,10 @@ def process_files(attachments_dir: str = ".digy_attachments") -> None:
     # Check if attachments directory exists
     if not os.path.exists(attachments_dir):
         print("[yellow]No attachments directory found.[/]")
-        print("Run with: digy local . file_processor.py \
-              --attach file1.txt")
+        print(
+            "Run with: digy local . file_processor.py \
+              --attach file1.txt"
+        )
         return
 
     # List all files in the attachments directory
@@ -50,7 +52,6 @@ def process_files(attachments_dir: str = ".digy_attachments") -> None:
                 print(f"  - Words: {len(content.split())}")
         except Exception as e:
             print(f"[red]Error processing {file_path}: {e}[/red]")
-
 
 
 class FileProcessor:
@@ -91,7 +92,7 @@ class FileProcessor:
                 "word_count": word_count,
                 "char_count": char_count,
                 "line_count": line_count,
-                "status": "processed"
+                "status": "processed",
             }
         except Exception as e:
             return {"file": str(file_path), "error": str(e)}
@@ -112,6 +113,7 @@ class FileProcessor:
 
         return results
 
+
 def main() -> None:
     """Main function to demonstrate file processing."""
     print("\n[bold]DIGY File Processor Example[/]")
@@ -129,8 +131,10 @@ def main() -> None:
     process_files()
 
     print("\n[green]File processing complete![/]")
-    print("Try running with different files using the --attach or "
-          "--interactive-attach options.")
+    print(
+        "Try running with different files using the --attach or "
+        "--interactive-attach options."
+    )
 
 
 if __name__ == "__main__":

@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # Use non-interactive backend for matplotlib to avoid display issues
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 
 
-def analyze_data(input_file: str, output_dir: str = 'output') -> None:
+def analyze_data(input_file: str, output_dir: str = "output") -> None:
     """
     Analyze data from a CSV file and generate a report.
 
@@ -41,32 +41,25 @@ def analyze_data(input_file: str, output_dir: str = 'output') -> None:
     # Basic analysis
     print("\n📈 Basic Statistics:")
     stats = df.describe()
-    with pd.option_context('display.max_columns', None, 'display.width', 120):
+    with pd.option_context("display.max_columns", None, "display.width", 120):
         print(stats)
 
     # Save basic statistics to a file
-    stats_file = os.path.join(output_dir, 'statistics.txt')
-    with open(stats_file, 'w', encoding='utf-8') as f:
-        f.write("Data Statistics\n" + "="*50 + "\n")
+    stats_file = os.path.join(output_dir, "statistics.txt")
+    with open(stats_file, "w", encoding="utf-8") as f:
+        f.write("Data Statistics\n" + "=" * 50 + "\n")
         f.write(stats.to_string())
 
     # Generate plots for numeric columns
-    numeric_cols = df.select_dtypes(include=['number']).columns
+    numeric_cols = df.select_dtypes(include=["number"]).columns
 
     if len(numeric_cols) > 0:
         print("\n📊 Generating plots for numeric columns...")
         for col in numeric_cols:
             try:
                 plt.figure(figsize=(10, 6))
-                df[col].plot(
-                    kind='hist',
-                    bins=20,
-                    title=f'{col} Distribution'
-                )
-                plot_file = os.path.join(
-                    output_dir,
-                    f'{col}_distribution.png'
-                )
+                df[col].plot(kind="hist", bins=20, title=f"{col} Distribution")
+                plot_file = os.path.join(output_dir, f"{col}_distribution.png")
                 plt.savefig(plot_file)
                 plt.close()
                 print(f"✅ Saved {col} distribution plot to {plot_file}")
@@ -82,21 +75,15 @@ def main() -> None:
     """Handle command line arguments and run the analysis."""
     import argparse
 
-    parser = argparse.ArgumentParser(description='Analyze CSV data')
+    parser = argparse.ArgumentParser(description="Analyze CSV data")
+    parser.add_argument("--input-file", required=True, help="Path to input CSV file")
     parser.add_argument(
-        '--input-file',
-        required=True,
-        help='Path to input CSV file'
-    )
-    parser.add_argument(
-        '--output-dir',
-        default='analysis_output',
-        help='Directory to save output files'
+        "--output-dir", default="analysis_output", help="Directory to save output files"
     )
 
     # For DIGY compatibility, also accept arguments after --
-    if '--' in sys.argv:
-        args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
+    if "--" in sys.argv:
+        args = parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
     else:
         args = parser.parse_args()
 
@@ -113,9 +100,8 @@ Usage with DIGY:
     print(usage)
 
 
-
 if __name__ == "__main__":
-    if len(sys.argv) == 1 or '--help' in sys.argv or '-h' in sys.argv:
+    if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv:
         print_usage()
     else:
         main()

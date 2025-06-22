@@ -28,6 +28,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 # Make docker import optional
 try:
     import docker
+
     DOCKER_AVAILABLE = True
 except ImportError:
     DOCKER_AVAILABLE = False
@@ -36,6 +37,7 @@ from .deployer import Deployer
 from .interactive import InteractiveMenu
 
 console = Console()
+
 
 class MemoryManager:
     """Manages memory allocation for loaded repositories."""
@@ -47,16 +49,16 @@ class MemoryManager:
 
     def check_available_memory(self) -> int:
         """Check available RAM in MB."""
-        if sys.platform == 'linux' or sys.platform == 'linux2':
-            with open('/proc/meminfo', 'r') as mem:
+        if sys.platform == "linux" or sys.platform == "linux2":
+            with open("/proc/meminfo", "r") as mem:
                 mem.readline()  # Skip first line
                 mem_available = int(mem.readline().split()[1]) / 1024
                 return int(mem_available)
-        elif sys.platform == 'darwin':
-            mem = subprocess.check_output(['vm_stat']).decode('ascii')
-            pages_free = int(re.search(r'Pages free:[\s]+(\d+)', mem).group(1))
-            pages_inactive = int(re.search(r'Pages inactive:[\s]+(\d+)', mem).group(1))
-            page_size = os.sysconf('hw.pagesize')
+        elif sys.platform == "darwin":
+            mem = subprocess.check_output(["vm_stat"]).decode("ascii")
+            pages_free = int(re.search(r"Pages free:[\s]+(\d+)", mem).group(1))
+            pages_inactive = int(re.search(r"Pages inactive:[\s]+(\d+)", mem).group(1))
+            page_size = os.sysconf("hw.pagesize")
             return int((pages_free + pages_inactive) * page_size / (1024 * 1024))
         return 2000  # Default to 2GB if we can't determine available memory
 
@@ -76,7 +78,9 @@ class MemoryManager:
         """Deallocate memory for repository."""
         self.allocated_repos.pop(repo_url, None)
 
+
 memory_manager = MemoryManager()
+
 
 class GitLoader:
     """Load Git repositories into memory-based temporary directories."""
@@ -110,16 +114,20 @@ class GitLoader:
         try:
             repo_info = self.parse_repo_url(repo_url)
             local_path = repo_info["local_path"]
-            project_name = repo_info['name']
+            project_name = repo_info["name"]
 
             # Skip RAM disk if we can't create it
-            use_ram_disk = os.getenv('DIGY_USE_RAM_DISK', 'true').lower() == 'true'
+            use_ram_disk = os.getenv("DIGY_USE_RAM_DISK", "true").lower() == "true"
             ram_disk = None
-            
+
             if use_ram_disk:
                 try:
-                    ram_size = int(os.getenv('DIGY_RAM_SIZE', 
-                                        self.manifest.get('config', {}).get('ram_size', 2)))
+                    ram_size = int(
+                        os.getenv(
+                            "DIGY_RAM_SIZE",
+                            self.manifest.get("config", {}).get("ram_size", 2),
+                        )
+                    )
                     ram_disk = self.create_ram_disk(ram_size)
                 except Exception as e:
                     console.print(f"⚠️ Warning: Could not create RAM disk: {e}")
@@ -128,130 +136,142 @@ class GitLoader:
 
             # Get volume configuration
             volumes = self.get_volume_config(project_name)
-            
+
             # Try direct Git clone first (bypassing Docker)
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
-                console=console
+                console=console,
             ) as progress:
                 task = progress.add_task("Cloning repository...", total=1)
                 try:
                     # Try local Git clone first
+                    import os
                     import shutil
                     import tempfile
-                    import os
-                    
-                    if shutil.which('git') is None:
+
+                    if shutil.which("git") is None:
                         raise Exception("Git is not installed locally")
-                        
+
                     # Create a temporary directory for the clone
-                    temp_dir = tempfile.mkdtemp(prefix='digy_')
+                    temp_dir = tempfile.mkdtemp(prefix="digy_")
                     repo_dir = os.path.join(temp_dir, project_name)
-                    
+
                     # Clone the repository locally
-                    clone_cmd = [
-                        'git', 'clone',
-                        '--depth', '1'
-                    ]
-                    
+                    clone_cmd = ["git", "clone", "--depth", "1"]
+
                     # Add branch if specified
                     if branch:
-                        clone_cmd.extend(['--branch', branch])
-                    
+                        clone_cmd.extend(["--branch", branch])
+
                     # Add repository URL and target directory
-                    clone_cmd.extend([repo_info['url'], repo_dir])
-                    
+                    clone_cmd.extend([repo_info["url"], repo_dir])
+
                     progress.print(f"Running: {' '.join(clone_cmd)}")
-                    
+
                     # Execute the Git command
-                    result = subprocess.run(
-                        clone_cmd,
-                        capture_output=True,
-                        text=True
-                    )
-                    
+                    result = subprocess.run(clone_cmd, capture_output=True, text=True)
+
                     if result.returncode != 0:
-                        error_msg = f"Git clone failed with return code {result.returncode}"
+                        error_msg = (
+                            f"Git clone failed with return code {result.returncode}"
+                        )
                         if result.stderr:
                             error_msg += f": {result.stderr.strip()}"
                         if result.stdout:
                             error_msg += f"\nOutput: {result.stdout.strip()}"
                         raise Exception(error_msg)
-                    
-                    progress.update(task, advance=1, description="✅ Repository cloned with Git")
+
+                    progress.update(
+                        task, advance=1, description="✅ Repository cloned with Git"
+                    )
                     return f"file://{repo_dir}"
-                    
+
                 except Exception as e:
                     progress.print(f"❌ Git clone failed: {e}")
                     progress.print("⚠️ Falling back to direct download")
-                    
+
                     # Ensure we have a clean state
                     if os.path.exists(temp_dir):
                         shutil.rmtree(temp_dir, ignore_errors=True)
-                    
+
                     # Create a new temporary directory for the zip download
-                    temp_dir = tempfile.mkdtemp(prefix='digy_zip_')
+                    temp_dir = tempfile.mkdtemp(prefix="digy_zip_")
                     progress.print("Attempting to download repository as zip...")
-                    
+
                     try:
                         # Construct the zip URL based on the repository URL format
-                        if 'github.com' in repo_info['url']:
+                        if "github.com" in repo_info["url"]:
                             # GitHub format: https://github.com/owner/repo/archive/refs/heads/branch.zip
-                            repo_path = repo_info['url'].replace('https://', '').replace('git@github.com:', '').replace('.git', '')
+                            repo_path = (
+                                repo_info["url"]
+                                .replace("https://", "")
+                                .replace("git@github.com:", "")
+                                .replace(".git", "")
+                            )
                             zip_url = f"https://github.com/{repo_path}/archive/refs/heads/{branch if branch else 'main'}.zip"
                         else:
                             # Fallback for other Git providers that support zip downloads
                             zip_url = f"{repo_info['url'].replace('.git', '')}/archive/refs/heads/{branch if branch else 'main'}.zip"
-                        
-                        zip_path = os.path.join(temp_dir, 'repo.zip')
+
+                        zip_path = os.path.join(temp_dir, "repo.zip")
                         progress.print(f"Downloading {zip_url}...")
-                        
+
                         # Download the zip file
                         response = requests.get(zip_url, stream=True)
                         response.raise_for_status()
-                        
+
                         # Write the zip file
-                        with open(zip_path, 'wb') as f:
+                        with open(zip_path, "wb") as f:
                             for chunk in response.iter_content(chunk_size=8192):
                                 f.write(chunk)
-                        
+
                         # Extract the zip file
                         progress.print("Extracting repository...")
                         import zipfile
-                        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+
+                        with zipfile.ZipFile(zip_path, "r") as zip_ref:
                             zip_ref.extractall(temp_dir)
-                        
+
                         # Get the extracted directory name
-                        extracted_dirs = [d for d in os.listdir(temp_dir) 
-                                       if os.path.isdir(os.path.join(temp_dir, d)) 
-                                       and d != os.path.basename(local_path)]
-                        
+                        extracted_dirs = [
+                            d
+                            for d in os.listdir(temp_dir)
+                            if os.path.isdir(os.path.join(temp_dir, d))
+                            and d != os.path.basename(local_path)
+                        ]
+
                         if not extracted_dirs:
                             raise Exception("No directories found in downloaded zip")
-                        
+
                         extracted_path = os.path.join(temp_dir, extracted_dirs[0])
-                        
+
                         # Move the extracted directory to the target location
                         if os.path.exists(local_path):
                             shutil.rmtree(local_path, ignore_errors=True)
                         shutil.move(extracted_path, local_path)
-                        
-                        progress.update(task, advance=1, description="✅ Repository downloaded and extracted")
+
+                        progress.update(
+                            task,
+                            advance=1,
+                            description="✅ Repository downloaded and extracted",
+                        )
                         return f"file://{local_path}"
-                        
+
                     except ImportError:
-                        raise Exception("The 'requests' package is required for downloading repositories")
+                        raise Exception(
+                            "The 'requests' package is required for downloading repositories"
+                        )
                     except Exception as e:
                         raise Exception(f"Failed to download repository: {e}")
                     finally:
                         # Clean up temporary files
-                        if 'zip_path' in locals() and os.path.exists(zip_path):
+                        if "zip_path" in locals() and os.path.exists(zip_path):
                             os.remove(zip_path)
-                        if 'temp_dir' in locals() and os.path.exists(temp_dir):
+                        if "temp_dir" in locals() and os.path.exists(temp_dir):
                             shutil.rmtree(temp_dir, ignore_errors=True)
 
-                        script_content = f'''#!/bin/bash
+                        script_content = f"""#!/bin/bash
 set -e
 echo "=== Container Environment ==="
 echo "PATH: $PATH"
@@ -266,39 +286,42 @@ git clone --depth 1 --branch {shlex.quote(branch)} {shlex.quote(repo_url)} /app
 # Fix permissions
 chmod -R a+rw /app
 echo "Repository cloned successfully"
-'''
+"""
 
-                        script_path = os.path.join(temp_dir, 'clone_repo.sh')
-                        with open(script_path, 'w', encoding='utf-8') as f:
+                        script_path = os.path.join(temp_dir, "clone_repo.sh")
+                        with open(script_path, "w", encoding="utf-8") as f:
                             f.write(script_content)
-                        
+
                         # Make the script executable
                         os.chmod(script_path, 0o755)
-                        
+
                         # Generate a unique container name
                         container_name = f"digy-clone-{os.getpid()}"
-                        
+
                         try:
                             # Build the docker run command to clone the repo using our custom image
                             docker_cmd = [
-                                'docker', 'run',
-                                '--rm',
-                                '--name', container_name,
-                                '-v', f'{temp_dir}:/app:Z',  # :Z for SELinux compatibility
-                                'localhost/digy-base:latest',  # Use our custom image with Git pre-installed
-                                '/app/clone_repo.sh',  # Run our script
+                                "docker",
+                                "run",
+                                "--rm",
+                                "--name",
+                                container_name,
+                                "-v",
+                                f"{temp_dir}:/app:Z",  # :Z for SELinux compatibility
+                                "localhost/digy-base:latest",  # Use our custom image with Git pre-installed
+                                "/app/clone_repo.sh",  # Run our script
                                 branch,  # Pass branch as first argument
-                                repo_info["url"]  # Pass URL as second argument
+                                repo_info["url"],  # Pass URL as second argument
                             ]
-                            
+
                             # Run the docker command
-                            progress.print("Running docker command:", ' '.join(docker_cmd))
-                            result = subprocess.run(
-                                docker_cmd,
-                                capture_output=True,
-                                text=True
+                            progress.print(
+                                "Running docker command:", " ".join(docker_cmd)
                             )
-                            
+                            result = subprocess.run(
+                                docker_cmd, capture_output=True, text=True
+                            )
+
                             if result.returncode != 0:
                                 error_msg = f"Docker command failed with return code {result.returncode}"
                                 if result.stderr:
@@ -307,21 +330,27 @@ echo "Repository cloned successfully"
                                     error_msg += f"\nOutput: {result.stdout.strip()}"
                                 progress.print(f"❌ {error_msg}")
                                 raise Exception(error_msg)
-                            
+
                             # Get the container ID
                             container_id = result.stdout.strip()
-                            progress.update(task, advance=1, description="✅ Repository cloned with Docker")
+                            progress.update(
+                                task,
+                                advance=1,
+                                description="✅ Repository cloned with Docker",
+                            )
                             return f"docker://{container_id}"
-                            
+
                         except subprocess.CalledProcessError as e:
-                            error_msg = f"Docker command failed with return code {e.returncode}"
+                            error_msg = (
+                                f"Docker command failed with return code {e.returncode}"
+                            )
                             if e.stderr:
                                 error_msg += f": {e.stderr.decode().strip()}"
                             if e.stdout:
                                 error_msg += f"\nOutput: {e.stdout.decode().strip()}"
                             progress.print(f"❌ {error_msg}")
                             raise Exception(error_msg) from e
-                            
+
                         except Exception as e:
                             progress.print(f"❌ Error: {e}")
                             # Clean up temp directory and any containers
@@ -329,13 +358,15 @@ echo "Repository cloned successfully"
                                 if os.path.exists(temp_dir):
                                     shutil.rmtree(temp_dir, ignore_errors=True)
                                 subprocess.run(
-                                    ['docker', 'rm', '-f', container_name],
+                                    ["docker", "rm", "-f", container_name],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
-                                    check=False
+                                    check=False,
                                 )
                             except Exception as cleanup_error:
-                                progress.print(f"⚠️ Warning during cleanup: {cleanup_error}")
+                                progress.print(
+                                    f"⚠️ Warning during cleanup: {cleanup_error}"
+                                )
                             return None
 
         except Exception as e:
@@ -350,14 +381,14 @@ echo "Repository cloned successfully"
 
     def load_manifest(self) -> dict:
         """Load manifest file from repository"""
-        manifest_path = os.path.join(self.base_path, 'manifest.yml')
-        
+        manifest_path = os.path.join(self.base_path, "manifest.yml")
+
         try:
             if not os.path.exists(manifest_path):
                 console.print("⚠️ Warning: Manifest file not found")
                 return {}
 
-            with open(manifest_path, 'r') as f:
+            with open(manifest_path, "r") as f:
                 try:
                     return yaml.safe_load(f) or {}
                 except yaml.YAMLError as e:
@@ -369,34 +400,31 @@ echo "Repository cloned successfully"
 
     def get_volume_config(self, project_name: str) -> Dict:
         """Get volume configuration for a project"""
-        config = self.manifest.get('config', {})
-        project_config = self.manifest.get('projects', {}).get(project_name, {})
-        
+        config = self.manifest.get("config", {})
+        project_config = self.manifest.get("projects", {}).get(project_name, {})
+
         # Initialize with default volumes
         volumes = {}
-        
+
         # Add default volume from config if it exists
-        config_volumes = config.get('volumes', [])
+        config_volumes = config.get("volumes", [])
         if config_volumes and len(config_volumes) > 0:
             vol = config_volumes[0]
-            volumes[vol.get('path', '/tmp')] = {
-                'bind': vol.get('path', '/tmp'),
-                'mode': 'rw'
+            volumes[vol.get("path", "/tmp")] = {
+                "bind": vol.get("path", "/tmp"),
+                "mode": "rw",
             }
-        
+
         # Add project-specific volumes
-        for volume in project_config.get('volumes', []):
-            if volume['type'] == 'local':
-                volumes[volume['path']] = {
-                    'bind': volume['path'],
-                    'mode': 'ro' if volume.get('readonly', False) else 'rw'
+        for volume in project_config.get("volumes", []):
+            if volume["type"] == "local":
+                volumes[volume["path"]] = {
+                    "bind": volume["path"],
+                    "mode": "ro" if volume.get("readonly", False) else "rw",
                 }
-            elif volume['type'] == 'ram':
-                volumes[volume['path']] = {
-                    'bind': volume['path'],
-                    'mode': 'rw'
-                }
-        
+            elif volume["type"] == "ram":
+                volumes[volume["path"]] = {"bind": volume["path"], "mode": "rw"}
+
         return volumes
 
     def create_ram_disk(self, size_gb: int = 2) -> str:
@@ -408,19 +436,19 @@ echo "Repository cloned successfully"
 
     def parse_repo_url(self, url: str) -> Dict[str, str]:
         """Parse repository URL and extract components.
-        
+
         Args:
             url: Repository URL to parse
-            
+
         Returns:
             Dict containing URL components and local path
         """
         # Handle SSH format (git@github.com:user/repo.git)
-        if url.startswith('git@'):
-            url = url.replace('git@', 'https://').replace(':', '/')
+        if url.startswith("git@"):
+            url = url.replace("git@", "https://").replace(":", "/")
         # Ensure URL has a scheme
-        if not url.startswith(('http://', 'https://')):
-            url = f'https://{url}'
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
 
         # Extract repo name for local directory
         repo_name = url.split("/")[-1]
@@ -430,26 +458,28 @@ echo "Repository cloned successfully"
         return {
             "url": url,
             "name": repo_name,
-            "local_path": str(Path(self.base_path) / repo_name)
+            "local_path": str(Path(self.base_path) / repo_name),
         }
 
-    def _clone_repository(self, repo_info: Dict[str, str], branch: str) -> Optional[str]:
+    def _clone_repository(
+        self, repo_info: Dict[str, str], branch: str
+    ) -> Optional[str]:
         """Clone a repository with branch fallback logic.
-        
+
         Args:
             repo_info: Dictionary containing repository info
             branch: Preferred branch to checkout
-            
+
         Returns:
             str: Path to cloned repository or None if failed
         """
         local_path = repo_info["local_path"]
-        project_name = repo_info['name']
+        project_name = repo_info["name"]
 
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
-            console=console
+            console=console,
         ) as progress:
             task = progress.add_task(f"Cloning {project_name}...", total=None)
 
@@ -463,7 +493,7 @@ echo "Repository cloned successfully"
                             repo_info["url"],
                             local_path,
                             branch=branch_name,
-                            depth=1  # Shallow clone to save memory
+                            depth=1,  # Shallow clone to save memory
                         )
                         break
                     except Exception:
@@ -481,17 +511,17 @@ echo "Repository cloned successfully"
 
     def download_repo(self, repo_url: str, branch: str = "main") -> Optional[str]:
         """Download repository to memory-based location.
-        
+
         Args:
             repo_url: URL of the repository to download
             branch: Branch to checkout (default: main)
-            
+
         Returns:
             str: Path to the downloaded repository or None if failed
         """
         try:
             repo_info = self.parse_repo_url(repo_url)
-            project_name = repo_info['name']
+            project_name = repo_info["name"]
 
             if repo_url in self.loaded_repos:
                 console.print(f"✅ Repository already loaded: {project_name}")
@@ -502,10 +532,11 @@ echo "Repository cloned successfully"
                 return None
 
             # Create RAM disk with configured size
-            ram_size = int(os.getenv(
-                'DIGY_RAM_SIZE',
-                self.manifest.get('config', {}).get('ram_size', 2)
-            ))
+            ram_size = int(
+                os.getenv(
+                    "DIGY_RAM_SIZE", self.manifest.get("config", {}).get("ram_size", 2)
+                )
+            )
             self.create_ram_disk(ram_size)
 
             local_path = self._clone_repository(repo_info, branch)
@@ -513,7 +544,7 @@ echo "Repository cloned successfully"
                 self.loaded_repos[repo_url] = local_path
                 console.print(f"📦 Repository loaded to: {local_path}")
                 return local_path
-            
+
             memory_manager.deallocate(repo_url)
             return None
 
@@ -540,7 +571,9 @@ echo "Repository cloned successfully"
         if os.path.exists(self.base_path):
             shutil.rmtree(self.base_path)
 
+
 loader_instance = GitLoader()
+
 
 def digy(repo_url: str, branch: str = "main") -> Optional[str]:
     """
@@ -589,6 +622,7 @@ def digy(repo_url: str, branch: str = "main") -> Optional[str]:
 
     return local_path
 
+
 def digy_command():
     """Command-line entry point for digy"""
     if len(sys.argv) < 2:
@@ -599,6 +633,7 @@ def digy_command():
     branch = sys.argv[2] if len(sys.argv) > 2 else "main"
 
     digy(repo_url, branch)
+
 
 # Backward compatibility
 load = digy

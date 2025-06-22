@@ -25,9 +25,7 @@ class TestInteractiveMenu:
         with open(self.readme_path, "w") as f:
             f.write("# Test README\nThis is a test repository.")
 
-        self.menu = InteractiveMenu(
-            self.temp_dir, self.mock_deployer, self.readme_path
-        )
+        self.menu = InteractiveMenu(self.temp_dir, self.mock_deployer, self.readme_path)
 
     def test_interactive_menu_initialization(self):
         """Test InteractiveMenu initialization"""
@@ -56,108 +54,104 @@ class TestInteractiveMenu:
     def test_navigate_menu_up(self):
         """Test menu navigation up"""
         self.menu.current_selection = 3
-        self.menu.navigate_menu('up')
+        self.menu.navigate_menu("up")
         assert self.menu.current_selection == 2
 
         # Test wrap around
         self.menu.current_selection = 0
-        self.menu.navigate_menu('up')
+        self.menu.navigate_menu("up")
         assert self.menu.current_selection == len(self.menu.menu_items) - 1
 
     def test_navigate_menu_down(self):
         """Test menu navigation down"""
         self.menu.current_selection = 2
-        self.menu.navigate_menu('down')
+        self.menu.navigate_menu("down")
         assert self.menu.current_selection == 3
 
         # Test wrap around
         self.menu.current_selection = len(self.menu.menu_items) - 1
-        self.menu.navigate_menu('down')
+        self.menu.navigate_menu("down")
         assert self.menu.current_selection == 0
 
     def test_navigate_menu_k_j(self):
         """Test vim-style navigation"""
         self.menu.current_selection = 2
-        self.menu.navigate_menu('k')
+        self.menu.navigate_menu("k")
         assert self.menu.current_selection == 1
 
-        self.menu.navigate_menu('j')
+        self.menu.navigate_menu("j")
         assert self.menu.current_selection == 2
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_show_repository_info(self, mock_console):
         """Test repository information display"""
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.show_repository_info()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_view_readme_success(self, mock_console):
         """Test README viewing success"""
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.view_readme()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_view_readme_no_file(self, mock_console):
         """Test README viewing with no file"""
-        menu_no_readme = InteractiveMenu(
-            self.temp_dir,
-            self.mock_deployer,
-            None
-        )
+        menu_no_readme = InteractiveMenu(self.temp_dir, self.mock_deployer, None)
 
-        with patch.object(menu_no_readme, 'wait_for_key'):
+        with patch.object(menu_no_readme, "wait_for_key"):
             menu_no_readme.view_readme()
             # Should print error message
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_setup_environment_success(self, mock_console):
         """Test environment setup success"""
         self.mock_deployer.setup_environment.return_value = True
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.setup_environment()
             self.mock_deployer.setup_environment.assert_called_once()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_setup_environment_failure(self, mock_console):
         """Test environment setup failure"""
         self.mock_deployer.setup_environment.return_value = False
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.setup_environment()
             self.mock_deployer.setup_environment.assert_called_once()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_list_python_files_success(self, mock_console):
         """Test Python files listing"""
         # Mock file info
         self.mock_deployer.get_file_info.side_effect = [
             {"lines": 50, "size": 1200, "has_main": True},
-            {"lines": 30, "size": 800, "has_main": False}
+            {"lines": 30, "size": 800, "has_main": False},
         ]
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.list_python_files()
             mock_console.print.assert_called()
             assert self.mock_deployer.get_file_info.call_count == 2
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_list_python_files_empty(self, mock_console):
         """Test Python files listing when no files found"""
         self.mock_deployer.python_files = []
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.list_python_files()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.Prompt.ask')
-    @patch('digy.interactive.Confirm.ask')
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.Prompt.ask")
+    @patch("digy.interactive.Confirm.ask")
+    @patch("digy.interactive.console")
     def test_run_python_file_success(self, mock_console, mock_confirm, mock_prompt):
         """Test running Python file successfully"""
         # Setup mocks
@@ -165,7 +159,7 @@ class TestInteractiveMenu:
         mock_confirm.return_value = False  # Don't run another file
         self.mock_deployer.run_python_file.return_value = (True, "Output", "")
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.run_python_file()
 
             self.mock_deployer.run_python_file.assert_called_once_with(
@@ -173,87 +167,89 @@ class TestInteractiveMenu:
             )
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.Prompt.ask')
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.Prompt.ask")
+    @patch("digy.interactive.console")
     def test_run_python_file_invalid_selection(self, mock_console, mock_prompt):
         """Test running Python file with invalid selection"""
         mock_prompt.return_value = "999"  # Invalid selection
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.run_python_file()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.Prompt.ask')
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.Prompt.ask")
+    @patch("digy.interactive.console")
     def test_run_python_file_no_files(self, mock_console, mock_prompt):
         """Test running Python file when no files available"""
         self.mock_deployer.python_files = []
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.run_python_file()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.Prompt.ask')
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.Prompt.ask")
+    @patch("digy.interactive.console")
     def test_inspect_file_success(self, mock_console, mock_prompt):
         """Test file inspection success"""
         mock_prompt.return_value = "1"  # Select first file
 
         # Create test file for inspection
         test_file = os.path.join(self.temp_dir, "main.py")
-        with open(test_file, 'w') as f:
-            f.write('import os\nprint("Hello")\nif __name__ == "__main__":\n    print("Main")')
+        with open(test_file, "w") as f:
+            f.write(
+                'import os\nprint("Hello")\nif __name__ == "__main__":\n    print("Main")'
+            )
 
         # Mock file info
         self.mock_deployer.get_file_info.return_value = {
             "lines": 4,
             "size": 65,
             "has_main": True,
-            "imports": ["import os"]
+            "imports": ["import os"],
         }
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.inspect_file()
             self.mock_deployer.get_file_info.assert_called_once_with("main.py")
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.Prompt.ask')
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.Prompt.ask")
+    @patch("digy.interactive.console")
     def test_inspect_file_invalid_selection(self, mock_console, mock_prompt):
         """Test file inspection with invalid selection"""
         mock_prompt.return_value = "999"  # Invalid selection
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.inspect_file()
             mock_console.print.assert_called()
 
-    @patch('subprocess.run')
-    @patch('digy.interactive.console')
+    @patch("subprocess.run")
+    @patch("digy.interactive.console")
     def test_interactive_shell_success(self, mock_console, mock_subprocess):
         """Test interactive shell launch"""
         self.mock_deployer.venv_path = "/fake/venv"
         self.mock_deployer.get_python_executable.return_value = "/fake/venv/bin/python"
         mock_subprocess.return_value = None
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.interactive_shell()
             mock_subprocess.assert_called_once()
             mock_console.print.assert_called()
 
-    @patch('digy.interactive.console')
+    @patch("digy.interactive.console")
     def test_interactive_shell_no_venv(self, mock_console):
         """Test interactive shell when no virtual environment exists"""
         self.mock_deployer.venv_path = None
         self.mock_deployer.setup_environment.return_value = False
 
-        with patch.object(self.menu, 'wait_for_key'):
+        with patch.object(self.menu, "wait_for_key"):
             self.menu.interactive_shell()
             self.mock_deployer.setup_environment.assert_called_once()
             mock_console.print.assert_called()
 
     def test_execute_action_show_info(self):
         """Test executing show_info action"""
-        with patch.object(self.menu, 'show_repository_info') as mock_method:
+        with patch.object(self.menu, "show_repository_info") as mock_method:
             result = self.menu.execute_action("show_info")
             mock_method.assert_called_once()
             assert result is True
@@ -263,7 +259,7 @@ class TestInteractiveMenu:
         result = self.menu.execute_action("exit")
         assert result is False
 
-    @patch('digy.interactive.console.print')
+    @patch("digy.interactive.console.print")
     def test_execute_action_all_actions(self, mock_print):
         """Test all menu actions can be executed"""
         # Map menu action names to their corresponding method names and return values
@@ -275,7 +271,7 @@ class TestInteractiveMenu:
             ("run_python_file", "run_python_file"),
             ("inspect_file", "inspect_file"),
             ("interactive_shell", "interactive_shell"),
-            ("exit", None)  # Special case for exit action
+            ("exit", None),  # Special case for exit action
         ]
 
         for action, method_name in actions_to_test:
@@ -284,47 +280,47 @@ class TestInteractiveMenu:
                 result = self.menu.execute_action("exit")
                 assert result is False
                 continue
-                
+
             # Create a mock for the method
             with patch.object(self.menu, method_name) as mock_method:
                 # Execute the action
                 result = self.menu.execute_action(action)
-                
+
                 # Verify the method was called exactly once with no arguments
                 mock_method.assert_called_once()
-                
+
                 # All actions except exit should return True to continue
                 assert result is True
 
-    @patch('builtins.input')
+    @patch("builtins.input")
     def test_get_user_input_normal(self, mock_input):
         """Test normal user input"""
         mock_input.return_value = "test input"
         result = self.menu.get_user_input()
         assert result == "test input"
 
-    @patch('builtins.input')
+    @patch("builtins.input")
     def test_get_user_input_keyboard_interrupt(self, mock_input):
         """Test user input with keyboard interrupt"""
         mock_input.side_effect = KeyboardInterrupt()
         result = self.menu.get_user_input()
         assert result == "q"
 
-    @patch('builtins.input')
+    @patch("builtins.input")
     def test_get_user_input_eof_error(self, mock_input):
         """Test user input with EOF error"""
         mock_input.side_effect = EOFError()
         result = self.menu.get_user_input()
         assert result == "q"
 
-    @patch('builtins.input')
+    @patch("builtins.input")
     def test_wait_for_key(self, mock_input):
         """Test wait for key functionality"""
         mock_input.return_value = ""
         self.menu.wait_for_key()
         mock_input.assert_called_once()
 
-    @patch('builtins.input')
+    @patch("builtins.input")
     def test_wait_for_key_keyboard_interrupt(self, mock_input):
         """Test wait for key with keyboard interrupt"""
         mock_input.side_effect = KeyboardInterrupt()
