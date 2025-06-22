@@ -1,0 +1,24 @@
+# DIGY Dockerfile Template
+FROM ${BASE_IMAGE}
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV DIGY_RAM=/tmp/digy_ram
+
+# Create working directory
+WORKDIR /app
+
+# Copy local files
+${COPY_LOCAL_FILES}
+
+# Install system dependencies
+${INSTALL_SYSTEM_DEPS}
+
+# Install Python dependencies
+${INSTALL_PYTHON_DEPS}
+
+# Create RAM disk mount point
+VOLUME ["${RAM_DISK_PATH}"]
+
+# Default command
+CMD ["python", "app.py"]

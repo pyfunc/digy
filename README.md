@@ -1,5 +1,183 @@
 # DIGY - Dynamic Interactive Git deploY
 
+## Docker Configuration
+
+DIGY supports running projects in isolated Docker containers with RAM-based storage for maximum performance. This ensures that:
+- Projects run in complete isolation
+- No local filesystem changes are made
+- Resources are cleaned up automatically
+- Execution is as fast as possible using RAM storage
+
+### Configuration
+
+DIGY uses a manifest file (`digy/manifest.yml`) to configure Docker settings. You can override these settings either:
+1. In the manifest file
+2. Using environment variables
+3. Through command-line arguments
+
+### Volume Types
+
+DIGY supports two types of volumes:
+
+1. **RAM Volumes**
+   - Stored in RAM for maximum speed
+   - Automatically cleaned up after use
+   - Size configurable in GB
+   - Example: `/tmp/digy_ram`
+
+2. **Local Volumes**
+   - Mount local directories into containers
+   - Can be read-only or read-write
+   - Useful for:
+     - Persistent data storage
+     - Local development
+     - Configuration files
+
+### Usage Examples
+
+1. **Basic Usage**
+```bash
+# Run a remote project in RAM
+$ digy start github.com/user/project
+
+# Run with custom RAM size
+$ DIGY_RAM_SIZE=4 digy start github.com/user/project
+```
+
+2. **Local File Mount**
+```bash
+# Create a local project configuration
+$ cat > digy.yml << EOF
+projects:
+  my_project:
+    volumes:
+      - type: local
+        path: /app/data
+        source: ./data
+        readonly: true
+EOF
+
+# Run with local data
+$ digy start github.com/user/project --config=digy.yml
+```
+
+3. **Custom Docker Configuration**
+```bash
+# Create custom Dockerfile
+$ cat > Dockerfile << EOF
+FROM python:3.12-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy local files
+COPY . /app
+
+# Install Python dependencies
+RUN pip install -r requirements.txt
+
+CMD ["python", "app.py"]
+EOF
+
+# Run with custom Dockerfile
+$ digy start github.com/user/project --dockerfile=Dockerfile
+```
+
+### Performance Tips
+
+1. **RAM Size**
+   - Default: 2GB
+   - Adjust based on project needs
+   - Larger projects may need more RAM
+
+2. **Local Mounts**
+   - Use read-only mounts for configuration
+   - Use RAM volumes for temporary data
+   - Keep persistent data in local volumes
+
+3. **Cleanup**
+   - RAM volumes are automatically cleaned
+   - Local volumes persist between runs
+   - Use `--cleanup` to remove all data
+
+### Environment Configuration
+
+DIGY supports configuration through environment variables. You can create a `.env` file in your project root based on the example:
+
+```bash
+cp .env.example .env
+```
+
+Key environment variables:
+
+- `DIGY_RAM_SIZE`: RAM disk size in GB (default: 1)
+- `DIGY_RAM_PATH`: RAM disk mount path (default: /tmp/digy_ram)
+- `DIGY_DOCKER_IMAGE`: Default Docker image (default: python:3.12-slim)
+- `DIGY_LOCAL_VOLUMES`: Local volume mounts (format: host:container:mode)
+- `DIGY_RAM_VOLUMES`: RAM volume mounts
+- `DIGY_ENV_VARS`: Default environment variables
+- `DIGY_AUTO_CLEANUP`: Automatic cleanup after execution (true/false)
+- `DIGY_LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
+
+Example `.env` file:
+```bash
+DIGY_RAM_SIZE=2
+DIGY_DOCKER_IMAGE=python:3.12-slim
+DIGY_LOCAL_VOLUMES=/app:/app:rw
+DIGY_LOG_LEVEL=INFO
+```
+
+### Security
+
+- All execution happens in isolated containers
+- No changes are made to the host system
+- RAM volumes are ephemeral
+- Local mounts can be made read-only
+- Environment variables can be configured per project
+
+### Troubleshooting
+
+1. **Not enough RAM**
+   - Increase RAM size in manifest
+   - Use `--ram-size` flag
+   - Monitor container memory usage
+
+2. **Volume permissions**
+   - Check Docker volume permissions
+   - Use `--user` flag to match UID
+   - Verify mount points are accessible
+
+3. **Resource cleanup**
+   - Use `--cleanup` flag
+   - Check Docker volume usage
+   - Monitor RAM disk usage
+
+## Basic Usage
+
+DIGY is a tool for deploying Python applications from Git repositories in isolated environments with interactive menu support.
+
+### Features
+
+- Load repositories from Git
+- Run Python applications in isolated environments
+- Interactive menu for easy navigation
+- RAM-based storage for maximum speed
+- Docker container isolation
+- Local volume support
+- Automatic cleanup
+
+### Installation
+
+```bash
+# Install globally
+pip install digy
+
+# Or use Poetry
+poetry install
+```
+
 **DIGY** to narzędzie do deploymentu aplikacji Python z repozytoriów Git w izolowanych środowiskach z interaktywnym menu nawigacyjnym.
 
 ## 🎯 Akronim DIGY

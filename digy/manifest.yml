@@ -1,0 +1,67 @@
+# DIGY Docker Manifest
+version: '1.0'
+
+# Default configuration
+config:
+  # RAM disk size in GB
+  ram_size: 1
+  # Default Python version
+  python_version: '3.12-slim'
+  # Default Docker image
+  base_image: 'python:${python_version}'
+  # Default volume mounts
+  volumes:
+    - type: ram
+      path: /tmp/digy_ram
+      size: ${ram_size}G
+    - type: local
+      path: /app
+      source: ./
+
+# Project-specific configurations
+projects:
+  # Example project configuration
+  example:
+    image: 'python:3.12-slim'
+    volumes:
+      - type: local
+        path: /app/data
+        source: ./data
+      - type: ram
+        path: /app/cache
+        size: 1G
+    environment:
+      - DEBUG=1
+      - CACHE_DIR=/app/cache
+    ports:
+      - "8080:8080"
+      - "5000:5000"
+    command: "python app.py"
+
+  # Default configuration for remote repositories
+  remote:
+    image: 'python:3.12-slim'
+    volumes:
+      - type: ram
+        path: /tmp/digy_ram
+        size: 2G
+    environment:
+      - PYTHONPATH=/app
+
+# Volume types
+volume_types:
+  ram:
+    description: "Temporary RAM disk"
+    options:
+      size: "Size in GB"
+  local:
+    description: "Local filesystem mount"
+    options:
+      source: "Local directory path"
+      readonly: "Read-only mount (true/false)"
+
+# Environment variables
+environment:
+  DIGY_RAM_SIZE: "Override RAM disk size"
+  DIGY_PYTHON_VERSION: "Override Python version"
+  DIGY_BASE_IMAGE: "Override base Docker image"
