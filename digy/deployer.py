@@ -11,7 +11,7 @@ import shutil
 import json
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
-import virtualenv
+from virtualenv import cli_run
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -61,8 +61,8 @@ class Deployer:
             ) as progress:
                 task = progress.add_task("Creating virtual environment...", total=None)
 
-                # Create virtual environment
-                virtualenv.create_environment(self.venv_path)
+                # Create virtual environment using the new API
+                cli_run([self.venv_path])
                 progress.update(task, description="✅ Virtual environment created")
 
             console.print(f"🐍 Virtual environment: {self.venv_path}")
@@ -144,24 +144,24 @@ class Deployer:
 
     def run_python_file(self, file_path: str, args: List[str] = None) -> Tuple[bool, str, str]:
         """Run a Python file in the virtual environment"""
-        if not self.venv_path:
-            if not self.create_virtual_environment():
-                return False, "", "Failed to create virtual environment"
+        # Ensure environment is properly set up
+        if not self.setup_environment():
+            return False, "", "Failed to set up environment"
+
+        python_executable = self.get_python_executable()
+        full_path = os.path.join(self.repo_path, file_path)
+
+        if not os.path.exists(full_path):
+            return False, "", f"File not found: {file_path}"
+
+        # Prepare command
+        cmd = [python_executable, full_path]
+        if args:
+            cmd.extend(args)
+
+        console.print(f"🚀 Running: {' '.join(cmd)}")
 
         try:
-            python_executable = self.get_python_executable()
-            full_path = os.path.join(self.repo_path, file_path)
-
-            if not os.path.exists(full_path):
-                return False, "", f"File not found: {file_path}"
-
-            # Prepare command
-            cmd = [python_executable, full_path]
-            if args:
-                cmd.extend(args)
-
-            console.print(f"🚀 Running: {' '.join(cmd)}")
-
             # Run the file
             result = subprocess.run(
                 cmd,
@@ -225,8 +225,29 @@ class Deployer:
 
         return info
 
-    def cleanup(self):
-        """Clean up virtual environment"""
+    def cleanup(self, force: bool = False):
+        """Clean up virtual environment
+        
+        Args:
+            force: If True, clean up even if the environment is still active
+        """
+        if not force and self.venv_path and os.path.exists(self.venv_path):
+            # Don't clean up if there are active processes
+            python_executable = self.get_python_executable()
+            if os.path.exists(python_executable):
+                try:
+                    # Check if any processes are using the Python executable
+                    for proc in psutil.process_iter(['pid', 'name', 'exe']):
+                        if proc.info['exe'] and proc.info['exe'].startswith(self.venv_path):
+                            console.print("⚠️ Virtual environment is still in use")
+                            return
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+
         if self.venv_path and os.path.exists(self.venv_path):
-            shutil.rmtree(self.venv_path)
-            console.print("🗑️ Virtual environment cleaned up")
+            try:
+                shutil.rmtree(self.venv_path)
+                console.print(f"🗑️ Cleaned up virtual environment: {self.venv_path}")
+            except Exception as e:
+                console.print(f"⚠️ Error cleaning up virtual environment: {e}")
+        self.venv_path = None

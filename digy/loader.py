@@ -194,8 +194,11 @@ def digy(repo_url: str, branch: str = "main") -> Optional[str]:
     except KeyboardInterrupt:
         console.print("\n👋 Goodbye!")
     finally:
-        # Cleanup
+        # Cleanup - only clean up the repo, not the virtual environment
         loader_instance.cleanup_repo(repo_url)
+        # Force cleanup of virtual environment if it exists
+        if deployer.venv_path:
+            deployer.cleanup(force=True)
 
     return local_path
 

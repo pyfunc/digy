@@ -98,6 +98,9 @@ class InteractiveMenu:
         """Execute selected menu action"""
         if action == "show_info":
             self.show_repository_info()
+        elif action == "exit":
+            self.deployer.cleanup(force=True)  # Force cleanup when exiting
+            sys.exit(0)
         elif action == "view_readme":
             self.view_readme()
         elif action == "setup_env":
