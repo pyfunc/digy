@@ -4,7 +4,6 @@ This demonstrates a machine learning workflow including data loading,
 model training, and evaluation.
 """
 import os
-from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -55,7 +54,6 @@ def evaluate_model(
 ) -> Dict[str, float]:
     """Evaluate model performance and return metrics."""
     y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)
     
     metrics = {
         "accuracy": accuracy_score(y_test, y_pred),
@@ -79,16 +77,16 @@ def evaluate_model(
 
 def save_model(model, output_dir: str = "output") -> str:
     """Save the trained model.
-    
+
     Args:
         model: Trained model to save
         output_dir: Directory to save the model
-        
+
     Returns:
         Path to the saved model
     """
     import joblib  # Import here to make it optional
-    
+
     os.makedirs(output_dir, exist_ok=True)
     model_path = os.path.join(output_dir, "iris_classifier.joblib")
     joblib.dump(model, model_path)
@@ -97,7 +95,7 @@ def save_model(model, output_dir: str = "output") -> str:
 
 def train_iris() -> Dict[str, Union[float, str]]:
     """Train and evaluate an Iris classifier.
-    
+
     Example:
         python -m examples.machine_learning.iris_classifier
     """

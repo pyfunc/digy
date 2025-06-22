@@ -2,10 +2,15 @@
 
 > **Note**: DIGY is in active development. Some features may be experimental.
 
-[![PyPI version](https://badge.fury.io/py/digy.svg)](https://badge.fury.io/py/digy)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI version](https://img.shields.io/pypi/v/digy?style=flat-square)](https://pypi.org/project/digy/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/digy?style=flat-square)](https://pypistats.org/packages/digy)
+[![Python Version](https://img.shields.io/pypi/pyversions/digy?style=flat-square)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![GitHub last commit](https://img.shields.io/github/last-commit/pyfunc/digy?style=flat-square)](https://github.com/pyfunc/digy/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues-raw/pyfunc/digy?style=flat-square)](https://github.com/pyfunc/digy/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/pyfunc/digy?style=flat-square)](https://github.com/pyfunc/digy/pulls)
+[![GitHub contributors](https://img.shields.io/github/contributors/pyfunc/digy?style=flat-square)](https://github.com/pyfunc/digy/graphs/contributors)
 
 DIGY is a powerful tool for executing Python code in various environments with minimal setup. It provides a consistent interface for running code locally, in Docker containers, in-memory, or on remote machines.
 
@@ -83,7 +88,7 @@ pip install digy
 #### Development Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/digy.git
+git clone https://github.com/pyfunc/digy.git
 cd digy
 
 # Install with development dependencies
@@ -97,16 +102,16 @@ poetry install
 
 ```bash
 # Run a local script
-digy local path/to/script.py
+digy local examples/basic/hello_world.py
 
 # Run in a Docker container
-digy docker --image python:3.9 path/to/script.py
+digy docker --image python:3.9 examples/basic/hello_world.py
 
 # Run in memory (fastest)
-digy ram path/to/script.py
+digy ram examples/basic/hello_world.py
 
 # Run on a remote machine
-digy remote user@example.com github.com/owner/repo path/to/script.py
+digy remote pi@raspberrypi github.com/pyfunc/digy examples/basic/hello_world.py
 ```
 
 ## 📚 Documentation
@@ -528,7 +533,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@pyfunc](https://github.com/pyfunc)
 - Twitter: [@yourhandle](https://twitter.com/yourhandle)
 - Email: your.email@example.com
 

@@ -64,7 +64,7 @@ digy docker --image python:3.9 examples/env/environment_info.py
 digy ram examples/env/environment_info.py
 
 # Remote execution (via SSH)
-digy remote user@example.com github.com/yourusername/yourrepo examples/env/environment_info.py
+digy remote user@example.com github.com/pyfunc/yourrepo examples/env/environment_info.py
 ```
 
 **Example Output**:
@@ -214,57 +214,63 @@ digy docker --image python:3.9-slim examples/web_scraping/website_scraper.py --u
 ## Machine Learning Example
 
 ### `machine_learning/iris_classifier.py`
-Demonstrates a complete ML workflow with scikit-learn. This example:
+A complete machine learning workflow example using scikit-learn. This script:
 - Loads the Iris dataset
 - Trains a Random Forest classifier
 - Evaluates the model
 - Saves the trained model and metrics
-- Generates visualizations
 
 **Dependencies**:
 - scikit-learn
-- pandas
-- matplotlib
+- numpy
 - joblib (for model serialization)
-- scipy (required by scikit-learn)
 
-**Install dependencies in a virtual environment (recommended):**
+**Installation and Setup:**
 ```bash
-# Create and activate a virtual environment
+# Create and activate a virtual environment (recommended)
 python -m venv ml_env
 source ml_env/bin/activate  # On Windows: ml_env\Scripts\activate
 
-# Install dependencies
-pip install scikit-learn pandas matplotlib joblib scipy
+# Install required packages
+pip install scikit-learn numpy joblib
 ```
 
-**Run the Iris classifier:**
+**Running the Example:**
 ```bash
-# Basic usage (trains and evaluates the model)
-digy local examples/machine_learning/iris_classifier.py
+# Run the script directly with Python
+python -m examples.machine_learning.iris_classifier
 
-# Save output to a specific directory
-digy local examples/machine_learning/iris_classifier.py --output-dir ml_results
-
-# Run in Docker with all dependencies included
-digy docker --image python:3.9-slim examples/machine_learning/iris_classifier.py
+# Or navigate to the examples directory and run:
+cd examples/machine_learning
+python iris_classifier.py
 ```
 
-**Example Output**:
+**Example Output:**
 ```
-📊 Loading Iris dataset...
-🤖 Training model...
-✅ Model training complete!
-📊 Accuracy: 0.9000
-💾 Model saved to ml_output/iris_classifier.joblib
-📈 Results saved to ml_output/
+Loading Iris dataset...
+Splitting data into training and test sets...
+Training Random Forest classifier...
+Evaluating model...
+Saving model...
+
+Training complete!
+Model saved to: output/iris_classifier.joblib
+
+Metrics:
+accuracy: 0.9
+setosa_precision: 1.0
+setosa_recall: 1.0
+setosa_f1-score: 1.0
+...
 ```
 
-**Output Files**:
-- `model.joblib`: Trained model file
-- `metrics.json`: Model evaluation metrics
-- `confusion_matrix.png`: Confusion matrix visualization
-- `feature_importances.png`: Feature importance plot
+**Key Features:**
+- Simple, self-contained script with no external dependencies beyond scikit-learn
+- Saves the trained model to disk for later use
+- Provides detailed classification metrics
+- Works in any Python 3.8+ environment with the required dependencies
+
+**Note:** This is a standalone Python script that demonstrates a complete ML workflow. For DIGY integration examples, see the other examples in this directory.
 
 ## File Attachment Examples
 
