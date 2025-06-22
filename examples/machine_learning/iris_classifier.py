@@ -1,163 +1,132 @@
-"""Iris Classifier Example.
+"""Iris classifier example.
 
-This script demonstrates a simple machine learning workflow using the Iris
-dataset. It trains a classifier and evaluates its performance.
+This demonstrates a machine learning workflow including data loading,
+model training, and evaluation.
 """
-
-import json
 import os
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
-import joblib
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-)
+from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 
 
-
-
-def load_data():
+def load_data() -> Tuple[np.ndarray, np.ndarray, List[str], List[str]]:
     """Load and prepare the Iris dataset."""
-    print("📊 Loading Iris dataset...")
     iris = load_iris()
-    X = pd.DataFrame(iris.data, columns=iris.feature_names)
-    y = pd.Series(iris.target, name='target')
-    target_names = iris.target_names
+    X = iris.data
+    y = iris.target
+    feature_names = iris.feature_names
+    target_names = iris.target_names.tolist()
+    return X, y, feature_names, target_names
 
-    # Split into train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+
+def preprocess_data(
+    X: np.ndarray, y: np.ndarray, test_size: float = 0.2, random_state: int = 42
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Split data into training and testing sets."""
+    return train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
     )
 
-    return X_train, X_test, y_train, y_test, target_names
 
-
-
-def train_model(X_train, y_train, n_estimators=100, random_state=42):
+def train_model(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    n_estimators: int = 100,
+    random_state: int = 42,
+) -> RandomForestClassifier:
     """Train a Random Forest classifier."""
-    print("🤖 Training model...")
     model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        random_state=random_state
+        n_estimators=n_estimators, random_state=random_state
     )
     model.fit(X_train, y_train)
     return model
 
 
-
-def evaluate_model(model, X_test, y_test, target_names, output_dir='output'):
-    """Evaluate the model and save results."""
-    Path(output_dir).mkdir(exist_ok=True, parents=True)
-
-    # Make predictions
+def evaluate_model(
+    model: RandomForestClassifier,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    target_names: List[str],
+) -> Dict[str, float]:
+    """Evaluate model performance and return metrics."""
     y_pred = model.predict(X_test)
-
-    # Calculate metrics
-    accuracy = accuracy_score(y_test, y_pred)
+    y_prob = model.predict_proba(X_test)
+    
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+    }
+    
+    # Add classification report metrics
     report = classification_report(
         y_test, y_pred, target_names=target_names, output_dict=True
     )
-
-    # Save metrics
-    metrics = {
-        'accuracy': accuracy,
-        'classification_report': report
-    }
-
-    metrics_path = os.path.join(output_dir, 'metrics.json')
-    with open(metrics_path, 'w', encoding='utf-8') as f:
-        json.dump(metrics, f, indent=2)
-
-    # Plot confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    disp = ConfusionMatrixDisplay(
-        confusion_matrix=cm,
-        display_labels=target_names
-    )
-    disp.plot(cmap=plt.cm.Blues)
-    plt.title('Confusion Matrix')
-    plt.savefig(
-        os.path.join(output_dir, 'confusion_matrix.png'),
-        bbox_inches='tight'
-    )
-    plt.close()
-
-    # Save feature importances
-    importances = model.feature_importances_
-    indices = np.argsort(importances)[::-1]
-    feature_names = [X_test.columns[i] for i in indices]
-
-    plt.figure(figsize=(10, 6))
-    plt.title('Feature Importances')
-    plt.bar(range(X_test.shape[1]), importances[indices])
-    plt.xticks(
-        range(X_test.shape[1]),
-        feature_names,
-        rotation=45,
-        ha='right'
-    )
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'feature_importances.png'))
-    plt.close()
-
+    
+    # Flatten the report for easier access
+    for label, scores in report.items():
+        if isinstance(scores, dict):
+            for metric, value in scores.items():
+                metrics[f"{label}_{metric}"] = value
+        else:
+            metrics[label] = scores
+    
     return metrics
 
 
-
-def save_model(model, output_dir='output'):
-    """Save the trained model."""
-    Path(output_dir).mkdir(exist_ok=True, parents=True)
-    model_path = os.path.join(output_dir, 'iris_classifier.joblib')
+def save_model(model, output_dir: str = "output") -> str:
+    """Save the trained model.
+    
+    Args:
+        model: Trained model to save
+        output_dir: Directory to save the model
+        
+    Returns:
+        Path to the saved model
+    """
+    import joblib  # Import here to make it optional
+    
+    os.makedirs(output_dir, exist_ok=True)
+    model_path = os.path.join(output_dir, "iris_classifier.joblib")
     joblib.dump(model, model_path)
     return model_path
 
 
-
-def main(output_dir='output'):
-    """Run the ML workflow.
+def train_iris() -> Dict[str, Union[float, str]]:
+    """Train and evaluate an Iris classifier.
     
-    Args:
-        output_dir: Directory to save output files
+    Example:
+        python -m examples.machine_learning.iris_classifier
     """
-    # Load and prepare data
-    X_train, X_test, y_train, y_test, target_names = load_data()
-
-    # Train model
+    print("Loading Iris dataset...")
+    X, y, feature_names, target_names = load_data()
+    
+    print("Splitting data into training and test sets...")
+    X_train, X_test, y_train, y_test = preprocess_data(X, y)
+    
+    print("Training Random Forest classifier...")
     model = train_model(X_train, y_train)
-
-    # Evaluate model
-    metrics = evaluate_model(model, X_test, y_test, target_names, output_dir)
-
-    # Save model
-    model_path = save_model(model, output_dir)
-
-    print("✅ Model training complete!")
-    print(f"📊 Accuracy: {metrics['accuracy']:.4f}")
-    print(f"💾 Model saved to {model_path}")
-    print(f"📈 Results saved to {output_dir}/")
-
+    
+    print("Evaluating model...")
+    metrics = evaluate_model(model, X_test, y_test, target_names)
+    
+    print("Saving model...")
+    model_path = save_model(model)
+    metrics["model_path"] = model_path
+    
+    print("\nTraining complete!")
+    print(f"Model saved to: {model_path}")
+    print("\nMetrics:")
+    for k, v in metrics.items():
+        if k != "model_path":  # Don't print the model path in metrics
+            print(f"{k}: {v}")
+    
+    return metrics
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Train an Iris classifier'
-    )
-    parser.add_argument(
-        '--output-dir',
-        default='output',
-        help='Directory to save output files'
-    )
-
-    args = parser.parse_args()
-    main(args.output_dir)
+    # When run directly, train the model
+    train_iris()

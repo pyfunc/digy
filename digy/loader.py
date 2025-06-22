@@ -3,6 +3,11 @@ Git repository loader for DIGY
 Handles downloading and caching repositories in RAM
 """
 
+"""Git repository loader for DIGY.
+
+Handles downloading and caching repositories in RAM.
+"""
+
 import os
 import re
 import shlex
@@ -74,7 +79,7 @@ class MemoryManager:
 memory_manager = MemoryManager()
 
 class GitLoader:
-    """Loads Git repositories into memory-based temporary directories"""
+    """Load Git repositories into memory-based temporary directories."""
 
     def __init__(self, base_path: Optional[str] = None):
         self.base_path = base_path or tempfile.mkdtemp(prefix="digy_")
@@ -90,7 +95,7 @@ class GitLoader:
         """Get a Docker client instance if available."""
         if not DOCKER_AVAILABLE:
             return None
-            
+
         try:
             # Test if Docker is actually available and responding
             client = docker.from_env()
