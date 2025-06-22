@@ -353,115 +353,21 @@ def run(
 @main.command()
 def examples():
     """Show usage examples"""
-
-    examples_text = """
-# Load a repository from GitHub
-digy start github.com/pyfunc/free-on-pypi
-
-# Load with specific branch
-digy start github.com/user/repo --branch develop
-
-# Quick shorthand (same as 'digy start')
-digy github.com/pyfunc/free-on-pypi
-
-# Using the direct digy function in Python
-from digy import digy
-digy('github.com/pyfunc/free-on-pypi')
-
-# Check current status
-digy status
-"""
-
-    syntax_panel = Panel(
-        examples_text.strip(),
-        title="Usage Examples",
-        border_style="green"
-    )
-    console.print(syntax_panel)
-
-@main.command()
-@click.argument('repo_url')
-@click.argument('python_file')
-@click.argument('args', nargs=-1, type=click.UNPROCESSED)
-@click.option('--branch', '-b', default='main', help='Git branch to checkout')
-@click.option('--env', '-e', 'env_type',
-              type=click.Choice(['local', 'docker', 'jvm', 'remote'], case_sensitive=False),
-              default='local',
-              help='Execution environment')
-            
-        # Clone the repository
-        try:
-            repo = git.Repo.clone_from(repo_url, repo_path, branch=branch)
-            console.print(f"✅ Cloned {branch} branch to {repo_path}")
-        except git.GitCommandError as e:
-            console.print(f"[red]Failed to clone repository: {e}[/red]")
-            sys.exit(1)
-        
-        # Check if the Python file exists
-        python_file_path = os.path.join(repo_path, python_file)
-        if not os.path.exists(python_file_path):
-            console.print(f"[red]Python file not found: {python_file}[/red]")
-            sys.exit(1)
-        
-        # Handle file attachments
-        files_to_attach = list(attachments)
-        if interactive_attach:
-            console.print("\n[bold]Select files to attach:[/]")
-            interactive_files = select_files_interactive()
-            files_to_attach.extend(interactive_files)
-        
-        if files_to_attach:
-            attach_dir = os.path.join(repo_path, '.digy_attachments')
-            os.makedirs(attach_dir, exist_ok=True)
-            attached = attach_files(files_to_attach, attach_dir)
-            console.print(f"\n📎 Attached {len(attached)} file(s) to {attach_dir}")
-        
-        # Create a deployer instance
-        deployer = Deployer(repo_path)
-        
-        # Execute the Python file with the environment manager
-        if env_manager.env_type == 'local':
-            # For local execution, use the deployer directly
-            result = deployer.execute_python_file(python_file, list(args))
-        else:
-            # For other environments, use the environment manager
-            cmd = [sys.executable, python_file] + list(args)
-            result = env_manager.execute_command(cmd, cwd=repo_path)
-        
-        if result.returncode == 0:
-            console.print("✅ Execution completed successfully")
-        else:
-            console.print(f"❌ Execution failed with code {result.returncode}")
-            
-    except Exception as e:
-        console.print(f"[red]Error: {str(e)}[/red]")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-    finally:
-        # Clean up the temporary directory
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        # Cleanup
-        loader.cleanup_repo(repo_url)
-
-@main.command()
-def examples():
-    """Show usage examples"""
     examples = """
-    Basic usage:
-      $ digy start github.com/user/repo
-      $ digy run github.com/user/repo script.py --arg1 value1
+    [bold]Basic usage:[/bold]
+    $ digy start github.com/username/repo
+    $ digy run github.com/username/repo script.py --arg1 value1
 
-    With environment selection:
-      $ digy --env docker start github.com/user/repo
-      $ digy --venv ~/venvs/myenv run github.com/user/repo script.py
+    [bold]With environment selection:[/bold]
+    $ digy --env docker start github.com/user/repo
+    $ digy --venv ~/venvs/myenv run github.com/user/repo script.py
 
-    With authentication:
-      $ digy --auth sql --auth-config dbconfig.json start github.com/user/repo
+    [bold]With authentication:[/bold]
+    $ digy --auth sql --auth-config dbconfig.json start github.com/user/repo
     """
     console.print(Panel(
-        Syntax(examples, "bash", theme="monokai", line_numbers=True),
-        title="Usage Examples",
+        examples.strip(),
+        title="DIGY Examples",
         border_style="blue"
     ))
 
@@ -469,19 +375,16 @@ def examples():
 def info():
     """Show information about DIGY"""
     info_text = f"""
-    DIGY - Dynamic Interactive Git deploY
+    [bold]DIGY - Dynamic Interactive Git deploY[/bold]
     Version: {__version__}
-
-    A tool for deploying and running Python applications from Git repositories
-    in isolated environments with support for multiple authentication methods
-    and execution environments.
+    Python: {sys.version.split()[0]}
+    Platform: {sys.platform}
     """
     console.print(Panel(
         info_text.strip(),
-        title="About DIGY",
-        border_style="blue"
-    )
-    console.print(info_panel)
+        title="DIGY Information",
+        border_style="green"
+    ))
 
 if __name__ == '__main__':
     main()
