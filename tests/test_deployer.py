@@ -2,11 +2,11 @@
 Tests for DIGY deployer module
 """
 
+import os
 import pytest
 import tempfile
-import os
-from unittest.mock import patch, MagicMock
 import subprocess
+from unittest.mock import patch, MagicMock, call
 
 from digy.deployer import Deployer
 
@@ -61,26 +61,20 @@ class TestDeployer:
         assert "requirements.txt" in self.deployer.requirements_files
         assert "setup.py" in self.deployer.setup_files
 
-    @patch('virtualenv.create_environment')
-    def test_create_virtual_environment_success(self, mock_create_env):
+    @patch('subprocess.run')
+    def test_create_virtual_environment_success(self, mock_run):
         """Test successful virtual environment creation"""
-        mock_create_env.return_value = None
-
-        result = self.deployer.create_virtual_environment()
-
-        assert result is True
+        mock_run.return_value.returncode = 0
+        assert self.deployer.create_virtual_environment() is True
         assert self.deployer.venv_path is not None
-        assert os.path.exists(self.deployer.venv_path)
-        mock_create_env.assert_called_once_with(self.deployer.venv_path)
+        assert mock_run.call_count == 1
 
-    @patch('virtualenv.create_environment')
-    def test_create_virtual_environment_failure(self, mock_create_env):
+    @patch('subprocess.run')
+    def test_create_virtual_environment_failure(self, mock_run):
         """Test virtual environment creation failure"""
-        mock_create_env.side_effect = Exception("Creation failed")
-
-        result = self.deployer.create_virtual_environment()
-
-        assert result is False
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stderr = "Test error"
+        assert self.deployer.create_virtual_environment() is False
         assert self.deployer.venv_path is not None  # Path is set but creation failed
 
     def test_get_python_executable(self):
@@ -179,7 +173,9 @@ class TestDeployer:
         with open(test_file, 'w') as f:
             f.write('raise ValueError("Test error")')
 
+        # Mock setup
         self.deployer.venv_path = "/fake/venv"
+        self.deployer.repo_path = self.temp_dir
 
         # Mock failed execution
         mock_run.return_value.returncode = 1
@@ -189,11 +185,14 @@ class TestDeployer:
         success, stdout, stderr = self.deployer.run_python_file("error.py")
 
         assert success is False
-        assert "Test error" in stderr
+        assert "ValueError: Test error" in stderr
 
-    def test_run_python_file_not_found(self):
+    @patch('subprocess.run')
+    def test_run_python_file_not_found(self, mock_run):
         """Test running non-existent Python file"""
+        # Mock setup
         self.deployer.venv_path = "/fake/venv"
+        self.deployer.repo_path = "/nonexistent"
 
         success, stdout, stderr = self.deployer.run_python_file("nonexistent.py")
 
@@ -207,7 +206,9 @@ class TestDeployer:
         with open(test_file, 'w') as f:
             f.write('import time; time.sleep(1000)')
 
+        # Mock setup
         self.deployer.venv_path = "/fake/venv"
+        self.deployer.repo_path = self.temp_dir
 
         # Mock timeout
         mock_run.side_effect = subprocess.TimeoutExpired("python", 300)

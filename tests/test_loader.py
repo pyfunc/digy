@@ -88,9 +88,16 @@ class TestGitLoader:
             loader._docker_client = None  # Mock no Docker available
             loader.manifest = {}  # Mock empty manifest
             loader.base_path = temp_dir  # Set base path for manifest
+            loader.ram_path = temp_dir  # Set ram_path for the test
+            
+            # Mock the clone_from to return a repo with working_dir
+            mock_repo.working_dir = os.path.join(temp_dir, "repo")
+            os.makedirs(mock_repo.working_dir, exist_ok=True)
+            
             result = loader.download_repo("github.com/user/repo")
     
             assert result is not None
+            assert result == os.path.join(temp_dir, "repo")
             assert "github.com/user/repo" in loader.loaded_repos
 
     @patch('digy.loader.memory_manager')

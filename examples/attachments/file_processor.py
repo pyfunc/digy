@@ -10,7 +10,7 @@ Or use interactive mode:
   digy local . file_processor.py --interactive-attach
 
 Or from a GitHub repo:
-  digy local github.com/username/repo file_processor.py --attach file1.txt
+  digy local github.com/pyfunc/digy file_processor.py --attach file1.txt
 """
 import os
 from pathlib import Path

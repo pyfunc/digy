@@ -2,7 +2,7 @@
 """
 A simple hello world example for DIGY.
 Run this with: digy local . hello_world.py
-or from a GitHub repo: digy local github.com/username/repo hello_world.py
+or from a GitHub repo: digy local github.com/pyfunc/digy hello_world.py
 """
 
 def main():

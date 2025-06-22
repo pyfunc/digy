@@ -196,9 +196,97 @@ def start(
     
     if no_interactive:
         console.print("🚀 Loading repository in non-interactive mode...")
-        # TODO: Implement non-interactive mode with attached files
-        console.print("❌ Non-interactive mode not yet implemented")
-        return
+        
+        # Load the repository
+        try:
+            # Import here to avoid circular imports
+            from .loader import GitLoader
+            
+            # Create a temporary directory for the repository
+            import tempfile
+            import shutil
+            
+            temp_dir = tempfile.mkdtemp(prefix='digy_')
+            console.print(f"📁 Using temporary directory: {temp_dir}")
+            
+            # Initialize GitLoader and clone the repository
+            loader = GitLoader(temp_dir)
+            repo_path = loader.download_repo(repo_url, branch)
+            
+            if not repo_path or not os.path.exists(repo_path):
+                console.print("❌ Failed to load repository", style="red")
+                return 1
+                
+            console.print(f"✅ Successfully loaded repository to: {repo_path}")
+            
+            # If files are specified, process them
+            if files:
+                console.print("📎 Processing attached files...")
+                for file_path in files:
+                    if os.path.exists(file_path):
+                        dest_path = os.path.join(repo_path, os.path.basename(file_path))
+                        shutil.copy2(file_path, dest_path)
+                        console.print(f"  - Attached: {file_path} -> {dest_path}")
+                    else:
+                        console.print(f"⚠️  File not found: {file_path}", style="yellow")
+            
+            # If a Python file is specified as the last argument, run it
+            if len(ctx.args) > 1:
+                python_file = ctx.args[-1]
+                if python_file.endswith('.py'):
+                    script_path = os.path.join(repo_path, python_file)
+                    if os.path.exists(script_path):
+                        console.print(f"\n🚀 Running script: {python_file}")
+                        console.print("-" * 50)
+                        
+                        # Set up environment
+                        env = os.environ.copy()
+                        if env_manager.venv_path:
+                            # Activate virtual environment if available
+                            if os.name == 'nt':  # Windows
+                                activate_script = os.path.join(env_manager.venv_path, 'Scripts', 'activate')
+                                cmd = f'"{activate_script}" && python "{script_path}"'
+                                shell = True
+                            else:  # Unix/macOS
+                                activate_script = os.path.join(env_manager.venv_path, 'bin', 'activate')
+                                cmd = f'source "{activate_script}" && python "{script_path}"'
+                                shell = True
+                        else:
+                            # No virtual environment, just run the script
+                            cmd = [sys.executable, script_path]
+                            shell = False
+                        
+                        # Run the script
+                        try:
+                            if shell:
+                                result = subprocess.run(cmd, shell=shell, cwd=repo_path, env=env)
+                            else:
+                                result = subprocess.run(cmd, cwd=repo_path, env=env)
+                                
+                            console.print("\n" + "-" * 50)
+                            console.print(f"Script completed with return code: {result.returncode}")
+                            return result.returncode
+                        except Exception as e:
+                            console.print(f"❌ Error running script: {e}", style="red")
+                            return 1
+                    else:
+                        console.print(f"❌ Script not found: {script_path}", style="red")
+                        return 1
+            
+            console.print("\nℹ️  No Python script specified to run")
+            console.print("   To run a script: digy local <repo> <script.py> [--args ...]")
+            return 0
+            
+        except Exception as e:
+            console.print(f"❌ Error in non-interactive mode: {e}", style="red")
+            import traceback
+            traceback.print_exc()
+            return 1
+        finally:
+            # Clean up temporary directory
+            if 'temp_dir' in locals() and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                console.print(f"🧹 Cleaned up temporary directory: {temp_dir}")
     
     # Store files in context for the interactive menu
     ctx.obj['attached_files'] = list(files)
@@ -389,8 +477,8 @@ def examples():
     """Show usage examples"""
     examples = """
     [bold]Basic usage:[/bold]
-    $ digy start github.com/username/repo
-    $ digy run github.com/username/repo script.py --arg1 value1
+    $ digy start github.com/pyfunc/digy
+    $ digy run github.com/pyfunc/digy script.py --arg1 value1
 
     [bold]With environment selection:[/bold]
     $ digy --env docker start github.com/user/repo

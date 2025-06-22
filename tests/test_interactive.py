@@ -262,18 +262,24 @@ class TestInteractiveMenu:
 
     def test_execute_action_all_actions(self):
         """Test all menu actions can be executed"""
-        actions_to_test = [
-            "show_repository_info", "view_readme", "setup_environment",
-            "list_python_files", "run_python_file", "inspect_file",
-            "interactive_shell"
-        ]
+        # Create a mapping of action names to their expected return values
+        actions_to_test = {
+            "show_repository_info": True,
+            "view_readme": True,
+            "setup_environment": True,
+            "list_python_files": ["file1.py", "file2.py"],
+            "run_python_file": (True, "output", ""),
+            "inspect_file": "file content",
+            "interactive_shell": True
+        }
 
-        for action in actions_to_test:
-            with patch.object(self.menu, action, return_value=True) as mock_method:
-                continue_execution = self.menu.execute_action(action)
+        for action, return_value in actions_to_test.items():
+            with patch.object(self.menu, action, return_value=return_value) as mock_method:
+                # For the test, we'll just check that the method is called
+                # and that execute_action returns True (continue execution)
+                result = self.menu.execute_action(action)
                 mock_method.assert_called_once()
-                if action != "exit":
-                    assert continue_execution is True
+                assert result is True
 
     @patch('builtins.input')
     def test_get_user_input_normal(self, mock_input):
