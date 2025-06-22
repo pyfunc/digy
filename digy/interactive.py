@@ -94,27 +94,32 @@ class InteractiveMenu:
         elif direction in ['down', 'j']:
             self.current_selection = (self.current_selection + 1) % len(self.menu_items)
 
-    def execute_action(self, action: str):
-        """Execute selected menu action"""
+    def execute_action(self, action: str) -> bool:
+        """Execute selected menu action and return whether to continue"""
         if action == "show_info":
             self.show_repository_info()
+            return True
         elif action == "exit":
             self.deployer.cleanup(force=True)  # Force cleanup when exiting
-            sys.exit(0)
+            return False
         elif action == "view_readme":
             self.view_readme()
+            return True
         elif action == "setup_env":
             self.setup_environment()
+            return True
         elif action == "list_files":
             self.list_python_files()
+            return True
         elif action == "run_file":
             self.run_python_file()
+            return True
         elif action == "inspect_file":
             self.inspect_file()
+            return True
         elif action == "shell":
             self.interactive_shell()
-        elif action == "exit":
-            return False
+            return True
         return True
 
     def show_repository_info(self):

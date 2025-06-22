@@ -38,10 +38,10 @@ DIGY supports two types of volumes:
 1. **Basic Usage**
 ```bash
 # Run a remote project in RAM
-$ digy start github.com/user/project
+$ digy start github.com/pyfunc/digy
 
 # Run with custom RAM size
-$ DIGY_RAM_SIZE=4 digy start github.com/user/project
+$ DIGY_RAM_SIZE=4 digy start github.com/pyfunc/digy
 ```
 
 2. **Local File Mount**
@@ -58,7 +58,7 @@ projects:
 EOF
 
 # Run with local data
-$ digy start github.com/user/project --config=digy.yml
+$ digy start github.com/pyfunc/digy --config=digy.yml
 ```
 
 3. **Custom Docker Configuration**
@@ -82,7 +82,7 @@ CMD ["python", "app.py"]
 EOF
 
 # Run with custom Dockerfile
-$ digy start github.com/user/project --dockerfile=Dockerfile
+$ digy start github.com/pyfunc/digy --dockerfile=Dockerfile
 ```
 
 ### Performance Tips

@@ -50,7 +50,7 @@ class Deployer:
                     self.setup_files.append(rel_path)
 
     def create_virtual_environment(self) -> bool:
-        """Create isolated virtual environment"""
+        """Create a new virtual environment"""
         try:
             self.venv_path = tempfile.mkdtemp(prefix="digy_venv_")
 
@@ -61,8 +61,8 @@ class Deployer:
             ) as progress:
                 task = progress.add_task("Creating virtual environment...", total=None)
 
-                # Create virtual environment using the new API
-                cli_run([self.venv_path])
+                # Use virtualenv.create() instead of cli_run()
+                virtualenv.cli_run([self.venv_path])
                 progress.update(task, description="✅ Virtual environment created")
 
             console.print(f"🐍 Virtual environment: {self.venv_path}")

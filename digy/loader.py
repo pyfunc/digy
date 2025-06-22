@@ -58,9 +58,72 @@ class GitLoader:
     def __init__(self, base_path: Optional[str] = None):
         self.base_path = base_path or tempfile.mkdtemp(prefix="digy_")
         self.loaded_repos: Dict[str, str] = {}
-        self.docker_client = docker.from_env()
         self.manifest = self.load_manifest()
         self.load_env_config()
+        self._docker_client = None
+
+    @property
+    def docker_client(self) -> docker.DockerClient:
+        """Lazy initialization of Docker client"""
+        if self._docker_client is None:
+            try:
+                self._docker_client = docker.from_env()
+            except docker.errors.DockerException as e:
+                console.print(f"⚠️ Warning: Docker not available: {e}")
+                self._docker_client = None
+        return self._docker_client
+
+    def download_repo(self, repo_url: str, branch: str = "main") -> Optional[str]:
+        """Download repository to memory-based location"""
+        try:
+            repo_info = self.parse_repo_url(repo_url)
+            local_path = repo_info["local_path"]
+            project_name = repo_info['name']
+
+            # Create RAM disk with configured size
+            ram_size = int(os.getenv('DIGY_RAM_SIZE', self.manifest.get('config', {}).get('ram_size', 2)))
+            ram_disk = self.create_ram_disk(ram_size)
+
+            # Get volume configuration
+            volumes = self.get_volume_config(project_name)
+
+            # Check if Docker is available
+            if self.docker_client:
+                # Use Docker to clone repository
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=console
+                ) as progress:
+                    task = progress.add_task(f"Cloning {repo_info['name']}...", total=None)
+
+                    # Use Docker to clone repository
+                    container = self.docker_client.containers.run(
+                        self.manifest.get('config', {}).get('base_image', 'python:3.12-slim'),
+                        f'git clone {repo_info["url"]} {ram_disk}/{repo_info["name"]}',
+                        volumes=volumes,
+                        remove=True
+                    )
+
+                    if container.status != 'exited' or container.exit_code != 0:
+                        console.print(f"❌ Failed to clone repository: {container.logs().decode()}")
+                        return None
+
+                    progress.update(task, description="✅ Cloned repository")
+            else:
+                # Fall back to local git clone if Docker is not available
+                console.print("⚠️ Docker not available, falling back to local git clone")
+                git.Repo.clone_from(
+                    repo_info["url"],
+                    local_path,
+                    branch=branch
+                )
+
+            return f"{ram_disk}/{repo_info['name']}"
+
+        except Exception as e:
+            console.print(f"❌ Error loading repository: {e}")
+            return None
 
     def load_env_config(self) -> None:
         """Load environment variables from .env file"""
