@@ -260,26 +260,41 @@ class TestInteractiveMenu:
         result = self.menu.execute_action("exit")
         assert result is False
 
-    def test_execute_action_all_actions(self):
+    @patch('digy.interactive.console.print')
+    def test_execute_action_all_actions(self, mock_print):
         """Test all menu actions can be executed"""
         # Create a mapping of action names to their expected return values
-        actions_to_test = {
-            "show_repository_info": True,
-            "view_readme": True,
-            "setup_environment": True,
-            "list_python_files": ["file1.py", "file2.py"],
-            "run_python_file": (True, "output", ""),
-            "inspect_file": "file content",
-            "interactive_shell": True
-        }
+        actions_to_test = [
+            ("show_repository_info", (True, "Repository info")),
+            ("view_readme", (True, "README content")),
+            ("setup_environment", (True, "Environment set up")),
+            ("list_python_files", (True, ["file1.py", "file2.py"])),
+            ("run_python_file", (True, "output", "")),
+            ("inspect_file", (True, "file content")),
+            ("interactive_shell", (True, "Shell started"))
+        ]
 
-        for action, return_value in actions_to_test.items():
+        for action, return_value in actions_to_test:
+            # Create a new mock for each action
             with patch.object(self.menu, action, return_value=return_value) as mock_method:
-                # For the test, we'll just check that the method is called
-                # and that execute_action returns True (continue execution)
+                # Reset call count for this mock
+                mock_method.reset_mock()
+                
+                # Execute the action
                 result = self.menu.execute_action(action)
-                mock_method.assert_called_once()
-                assert result is True
+                
+                # Verify the method was called exactly once
+                if action == "run_python_file":
+                    # run_python_file is called with file path and optional args
+                    mock_method.assert_called_once()
+                    success, stdout, stderr = return_value
+                else:
+                    # Other methods are called with no arguments
+                    mock_method.assert_called_once_with()
+                    success, _ = return_value
+                
+                # Verify the result matches expected success value
+                assert result == success
 
     @patch('builtins.input')
     def test_get_user_input_normal(self, mock_input):

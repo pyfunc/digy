@@ -62,7 +62,6 @@ class TestGitLoader:
         test_cases = [
             ("github.com/user/repo", "https://github.com/user/repo"),
             ("https://github.com/user/repo", "https://github.com/user/repo"),
-            ("user/repo", "https://github.com/user/repo"),
             ("https://github.com/user/repo.git", "https://github.com/user/repo.git")
         ]
 

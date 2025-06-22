@@ -1,6 +1,6 @@
 # DIGY Examples
 
-This directory contains example scripts that demonstrate various features of DIGY.
+This directory contains example scripts that demonstrate various features of DIGY. Each example is designed to work with DIGY's execution environments (local, docker, ram, remote).
 
 ## Basic Examples
 
@@ -34,6 +34,48 @@ digy ram examples/env/environment_info.py
 
 # Remote environment (requires SSH setup)
 digy remote user@example.com github.com/yourusername/yourrepo examples/env/environment_info.py
+```
+
+## Data Processing Example
+
+### `data_processing/data_analyzer.py`
+Demonstrates data analysis with pandas and matplotlib.
+
+**Run it with sample data:**
+```bash
+# Run with the included sample data
+digy local examples/data_processing/data_analyzer.py examples/data_processing/sample_data.csv
+
+# Save output to a specific directory
+digy local examples/data_processing/data_analyzer.py examples/data_processing/sample_data.csv --output-dir my_results
+```
+
+## Web Scraping Example
+
+### `web_scraping/website_scraper.py`
+Demonstrates web scraping with requests and BeautifulSoup.
+
+**Run it to scrape a website:**
+```bash
+# Scrape a website (replace with your target URL)
+digy local examples/web_scraping/website_scraper.py https://example.com
+
+# Save results to a custom directory
+digy local examples/web_scraping/website_scraper.py https://example.com --output-dir scrape_results
+```
+
+## Machine Learning Example
+
+### `machine_learning/iris_classifier.py`
+Demonstrates a complete ML workflow with scikit-learn.
+
+**Run the Iris classifier:**
+```bash
+# Train and evaluate the model (requires scikit-learn, matplotlib)
+digy local examples/machine_learning/iris_classifier.py
+
+# Save output to a specific directory
+digy local examples/machine_learning/iris_classifier.py --output-dir ml_results
 ```
 
 ## File Attachment Examples

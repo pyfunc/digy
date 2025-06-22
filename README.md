@@ -65,7 +65,7 @@ digy local https://github.com/octocat/Hello-World.git
 digy local https://github.com/octocat/Hello-World.git --branch main
 
 # Attach local files (available in interactive menu)
-digy local https://github.com/user/repo.git --file ./local_script.py
+digy local https://github.com/pyfunc/repo.git --file ./local_script.py
 ```
 
 #### Non-Interactive Mode

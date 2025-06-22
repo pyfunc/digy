@@ -1,0 +1,14 @@
+{
+  "url": "https://example.com",
+  "title": "Example Domain",
+  "description": "No description",
+  "status": "success",
+  "links_found": 1,
+  "links": [
+    {
+      "url": "https://www.iana.org/domains/example",
+      "text": "More information...",
+      "external": true
+    }
+  ]
+}
