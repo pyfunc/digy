@@ -20,7 +20,6 @@ from .interactive import InteractiveMenu
 
 console = Console()
 
-
 class MemoryManager:
     """Manages memory allocation for loaded repositories"""
 
@@ -50,9 +49,7 @@ class MemoryManager:
         if repo_url in self.allocated_repos:
             del self.allocated_repos[repo_url]
 
-
 memory_manager = MemoryManager()
-
 
 class GitLoader:
     """Loads Git repositories into memory-based temporary directories"""
@@ -96,9 +93,9 @@ class GitLoader:
                 return None
 
             with Progress(
-                    SpinnerColumn(),
-                    TextColumn("[progress.description]{task.description}"),
-                    console=console
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console
             ) as progress:
                 task = progress.add_task(f"Cloning {repo_info['name']}...", total=None)
 
@@ -156,13 +153,11 @@ class GitLoader:
         if os.path.exists(self.base_path):
             shutil.rmtree(self.base_path)
 
-
 loader_instance = GitLoader()
 
-
-def load(repo_url: str, branch: str = "main") -> Optional[str]:
+def digy(repo_url: str, branch: str = "main") -> Optional[str]:
     """
-    Main load function - downloads repository and starts interactive menu
+    Main digy function - downloads repository and starts interactive menu
 
     Args:
         repo_url: Repository URL (github.com/user/repo or full URL)
@@ -204,18 +199,17 @@ def load(repo_url: str, branch: str = "main") -> Optional[str]:
 
     return local_path
 
-
-def load_command():
-    """Command-line entry point for digy-load"""
+def digy_command():
+    """Command-line entry point for digy"""
     if len(sys.argv) < 2:
-        console.print("Usage: digy-load <repository_url> [branch]")
+        console.print("Usage: digy <repository_url> [branch]")
         sys.exit(1)
 
     repo_url = sys.argv[1]
     branch = sys.argv[2] if len(sys.argv) > 2 else "main"
 
-    load(repo_url, branch)
+    digy(repo_url, branch)
 
-
-if __name__ == "__main__":
-    load_command()
+# Backward compatibility
+load = digy
+load_command = digy_command
