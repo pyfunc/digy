@@ -52,24 +52,24 @@ class Deployer:
         """Create a new virtual environment"""
         try:
             self.venv_path = tempfile.mkdtemp(prefix="digy_venv_")
-
             with Progress(
                     SpinnerColumn(),
                     TextColumn("[progress.description]{task.description}"),
                     console=console
             ) as progress:
                 task = progress.add_task("Creating virtual environment...", total=None)
-
                 # Use subprocess to create virtualenv
-                subprocess.run([sys.executable, '-m', 'virtualenv', self.venv_path], check=True)
+                result = subprocess.run(
+                    [sys.executable, '-m', 'virtualenv', self.venv_path],
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode != 0:
+                    console.print(f"❌ Failed to create virtual environment: {result.stderr}")
+                    return False
                 progress.update(task, description="✅ Virtual environment created")
-
             console.print(f"🐍 Virtual environment: {self.venv_path}")
             return True
-
-        except subprocess.CalledProcessError:
-            console.print("❌ Failed to create virtual environment")
-            return False
         except Exception as e:
             console.print(f"❌ Error creating virtual environment: {e}")
             return False
