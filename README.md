@@ -1,4 +1,4 @@
-# DIGY - Dynamic Interactive Git deploY
+# DIGY - Do Interactive Git deploY
 
 ## Docker Configuration
 
