@@ -87,6 +87,7 @@ class TestGitLoader:
             loader = GitLoader(temp_dir)
             loader._docker_client = None  # Mock no Docker available
             loader.manifest = {}  # Mock empty manifest
+            loader.base_path = temp_dir  # Set base path for manifest
             result = loader.download_repo("github.com/user/repo")
     
             assert result is not None

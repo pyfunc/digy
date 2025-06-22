@@ -65,14 +65,19 @@ class Deployer:
                     text=True
                 )
                 if result.returncode != 0:
-                    raise Exception(f"Failed to create virtual environment: {result.stderr}")
+                    console.print(f"❌ Failed to create virtual environment: {result.stderr}")
+                    self.cleanup(force=True)
+                    return False
                 progress.update(task, description="✅ Virtual environment created")
             console.print(f"🐍 Virtual environment: {self.venv_path}")
             return True
         except subprocess.TimeoutExpired as e:
-            raise Exception(f"Command timed out after {e.timeout} seconds")
+            console.print(f"❌ Command timed out after {e.timeout} seconds")
+            self.cleanup(force=True)
+            return False
         except Exception as e:
             console.print(f"❌ Error creating virtual environment: {e}")
+            self.cleanup(force=True)
             return False
 
     def get_python_executable(self) -> str:

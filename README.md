@@ -1,6 +1,45 @@
-# DIGY - Do Interactive Git deploY
+# DIGY - Dynamic Interactive Git deploY
 
-## Docker Configuration
+## 🌟 Features
+
+- **Multi-Environment Execution**
+  - Local execution with virtual environments
+  - Docker container isolation
+  - Remote execution over SSH
+  - JVM-based execution
+  - RAM-based execution for maximum performance
+
+- **Interactive Development**
+  - Rich terminal interface
+  - Code inspection with syntax highlighting
+  - Interactive file selection
+  - Memory usage monitoring
+
+- **Flexible Configuration**
+  - Multiple authentication methods (SQL, Web, IO, Socket)
+  - Custom virtual environments
+  - File attachments for execution
+  - Environment-specific settings
+
+## 🚀 Quick Start
+
+### Basic Usage
+
+```bash
+# Run a repository locally
+digy local github.com/username/repo
+
+# Run a specific Python file from a repository
+digy local github.com/username/repo script.py --arg1 value1
+
+# Run on a remote host via SSH
+digy remote user@host github.com/username/repo script.py
+
+# Run in a Docker container
+digy docker --image python:3.12 github.com/username/repo script.py
+```
+
+## 🐳 Docker Configuration
 
 DIGY supports running projects in isolated Docker containers with RAM-based storage for maximum performance. This ensures that:
 - Projects run in complete isolation
@@ -38,26 +77,26 @@ DIGY supports two types of volumes:
 1. **Basic Usage**
 ```bash
 # Run a repository from GitHub
-digy run github.com/pyfunc/digy
+digy local github.com/pyfunc/digy
 
 # Run with 4GB RAM
-digy run --ram-size 4 github.com/pyfunc/digy
+digy local --ram-size 4 github.com/pyfunc/digy
 ```
 
 2. **Local File Mount**
 ```bash
 # Mount local directory into container
-digy run --mount ./data:/app/data:ro github.com/pyfunc/digy
+digy docker --mount ./data:/app/data:ro github.com/pyfunc/digy
 ```
 
 3. **Custom Docker Configuration**
 ```bash
 # Build and run with custom Dockerfile
 digy build -f Dockerfile .
-digy run --image myapp:latest github.com/pyfunc/digy
+digy docker --image myapp:latest github.com/pyfunc/digy
 
 # Or in one command
-digy run --build -f Dockerfile github.com/pyfunc/digy
+digy docker --build -f Dockerfile github.com/pyfunc/digy
 ```
 
 ### Performance Tips
@@ -65,7 +104,7 @@ digy run --build -f Dockerfile github.com/pyfunc/digy
 1. **RAM Size**
    - Default: 2GB (`--ram-size 2`)
    - Adjust based on project needs
-   - Example: `digy run --ram-size 4 github.com/user/repo`
+   - Example: `digy local --ram-size 4 github.com/user/repo`
 
 2. **Volume Mounts**
    - Read-only mount: `--mount ./config:/app/config:ro`
@@ -130,31 +169,66 @@ DIGY_LOG_LEVEL=INFO
    - Check Docker volume usage
    - Monitor RAM disk usage
 
-## Basic Usage
-
-DIGY is a tool for deploying Python applications from Git repositories in isolated environments with interactive menu support.
-
-### Features
-
-- Load repositories from Git
-- Run Python applications in isolated environments
-- Interactive menu for easy navigation
-- RAM-based storage for maximum speed
-- Docker container isolation
-- Local volume support
-- Automatic cleanup
-
-### Installation
+## 📦 Installation
 
 ```bash
-# Install globally
+# Install from PyPI
 pip install digy
 
-# Or use Poetry
-poetry install
+# Or install from source
+git clone https://github.com/pyfunc/digy
+cd digy
+pip install -e .
 ```
 
-**DIGY** to narzędzie do deploymentu aplikacji Python z repozytoriów Git w izolowanych środowiskach z interaktywnym menu nawigacyjnym.
+### Dependencies
+
+DIGY requires:
+- Python 3.8+
+- Git
+- Docker (for container execution)
+- SSH (for remote execution)
+
+Install development dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
+## 🔄 Execution Environments
+
+DIGY supports multiple execution environments:
+
+### 1. Local Execution
+```bash
+digy local github.com/username/repo
+```
+- Uses local Python environment
+- Creates virtual environment if needed
+- Supports file attachments
+
+### 2. Remote Execution
+```bash
+digy remote user@host github.com/username/repo script.py
+```
+- Executes code on remote host via SSH
+- Supports authentication
+- Transfers necessary files automatically
+
+### 3. Docker Execution
+```bash
+digy docker --image python:3.12 github.com/username/repo script.py
+```
+- Runs in isolated container
+- Customizable Docker images
+- Volume mounting support
+
+### 4. JVM Execution
+```bash
+digy jvm github.com/username/repo script.py
+```
+- Executes Python code on JVM using Jython
+- Java integration
+- Cross-platform compatibility
 
 ## 🎯 Akronim DIGY
 
@@ -185,18 +259,56 @@ cd digy
 poetry install
 ```
 
-## 🎯 Użycie
+## 🛠️ Advanced Usage
 
-### Podstawowe użycie
+### Command Reference
 
-```python
-from digy import digy
+#### `digy local` - Run Python files locally
+```bash
+# Basic usage
+digy local github.com/username/repo script.py
 
-# Załaduj repozytorium i uruchom interaktywne menu
-digy.local('github.com/pyfunc/free-on-pypi')
+# With arguments
+digy local github.com/username/repo script.py --arg1 value1 --arg2 value2
 ```
 
-### Wiersz poleceń
+#### `digy remote` - Run Python files on a remote host via SSH
+```bash
+digy remote user@host github.com/username/repo script.py
+```
+
+#### `digy docker` - Run Python files in a Docker container
+```bash
+digy docker --image python:3.12 github.com/username/repo script.py
+```
+
+#### `digy jvm` - Run Python files on JVM
+```bash
+digy jvm github.com/username/repo script.py
+```
+
+#### `digy local` - Run locally with interactive menu
+```bash
+digy local github.com/username/repo
+
+# Specify branch
+digy local github.com/username/repo --branch develop
+
+# Attach local files
+digy local github.com/username/repo --file config.json
+```
+
+#### Environment Management
+```bash
+# List available environments
+digy env list
+
+# Create new environment
+digy env create myenv --python=3.10
+
+# Activate environment
+digy env activate myenv
+```
 
 ```bash
 # Uruchomienie w środowisku lokalnym
@@ -384,11 +496,17 @@ digy/
 ├── digy/
 │   ├── __init__.py      # Główny moduł
 │   ├── loader.py        # Ładowanie repozytoriów
-│   ├── deployer.py      # Deployment i uruchamianie
-│   ├── interactive.py   # Interaktywne menu
-│   ├── cli.py          # Interface wiersza poleceń
-│   └── version.py      # Informacje o wersji
-├── tests/              # Testy
+│   ├── deployer.py      # Deployment and execution
+│   ├── interactive.py   # Interactive menu
+│   ├── cli.py          # Command line interface
+│   ├── environment.py   # Environment management
+│   ├── auth.py         # Authentication providers
+│   └── version.py      # Version information
+├── tests/              # Tests
+├── examples/           # Usage examples
+│   ├── basic/          # Basic examples
+│   ├── env/            # Environment examples
+│   └── attachments/    # File attachment examples
 ├── pyproject.toml      # Konfiguracja Poetry
 └── README.md          # Dokumentacja
 ```
