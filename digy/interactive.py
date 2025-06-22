@@ -105,19 +105,19 @@ class InteractiveMenu:
         elif action == "view_readme":
             self.view_readme()
             return True
-        elif action == "setup_env":
+        elif action == "setup_environment":
             self.setup_environment()
             return True
-        elif action == "list_files":
+        elif action == "list_python_files":
             self.list_python_files()
             return True
-        elif action == "run_file":
+        elif action == "run_python_file":
             self.run_python_file()
             return True
         elif action == "inspect_file":
             self.inspect_file()
             return True
-        elif action == "shell":
+        elif action == "interactive_shell":
             self.interactive_shell()
             return True
         return True

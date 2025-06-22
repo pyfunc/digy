@@ -131,20 +131,25 @@ class GitLoader:
         if env_path.exists():
             dotenv.load_dotenv(env_path)
 
-    def load_manifest(self) -> Dict:
+    def load_manifest(self) -> bool:
         """Load manifest file from repository"""
-        manifest_path = Path(__file__).parent / "manifest.yml"
+        manifest_path = os.path.join(self.base_path, 'manifest.yml')
         
         try:
             if not os.path.exists(manifest_path):
                 console.print("⚠️ Warning: Manifest file not found")
-                return {}
+                return False
 
             with open(manifest_path, 'r') as f:
-                return yaml.safe_load(f)
+                try:
+                    self.manifest = yaml.safe_load(f)
+                    return True
+                except yaml.YAMLError as e:
+                    console.print(f"⚠️ Warning: Invalid YAML in manifest: {e}")
+                    return False
         except Exception as e:
             console.print(f"⚠️ Warning: Could not load manifest: {e}")
-            return {}
+            return False
 
     def get_volume_config(self, project_name: str) -> Dict:
         """Get volume configuration for a project"""
