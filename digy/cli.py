@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import click
 from rich.console import Console
@@ -18,7 +18,7 @@ from rich.table import Table
 
 from .auth import get_auth_provider, interactive_auth_selector
 from .environment import EnvironmentManager, select_virtualenv
-from .loader import digy, memory_manager
+from .loader import digy, memory_manager, GitLoader
 from .version import __version__
 
 # Import Deployer if it exists in the project
@@ -431,31 +431,8 @@ def docker(
     ctx.obj["interactive_attach"] = interactive_attach
     ctx.obj["env_manager"] = env_manager
 
-    # Wywołaj funkcję digy z odpowiednimi argumentami
+    # Call the digy function with the correct arguments
     return digy(repo_url, branch)
-    """
-    Run script in Docker environment
-
-    REPO_URL: Repository to load (e.g., github.com/user/repo)
-    PYTHON_FILE: Python file to execute (relative path in repository)
-    ARGS: Arguments to pass to the Python file
-    """
-    return run(
-        ctx,
-        repo_url,
-        python_file,
-        args,
-        branch,
-        "docker",
-        docker_image,
-        None,  # remote_host nie jest potrzebny dla docker
-        attachments,
-        interactive_attach,
-        venv_path,
-        python_path,
-        no_venv,
-    )
-    """
     Quick run: Load repository and execute a specific Python file
 
     REPO_URL: Repository to load (e.g., github.com/user/repo)
