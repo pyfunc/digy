@@ -377,18 +377,8 @@ def status(ctx):
 @main.command()
 @click.argument("repo_url")
 @click.argument("python_file")
-@click.argument("args", nargs=-1, type=click.UNPROCESSED)
 @click.option("--branch", "-b", default="main", help="Git branch to checkout")
-@click.option(
-    "--env",
-    "-e",
-    "env_type",
-    type=click.Choice(["local", "docker", "jvm", "remote"], case_sensitive=False),
-    default="local",
-    help="Execution environment",
-)
 @click.option("--docker-image", help="Docker image to use (for docker env)")
-@click.option("--remote-host", help="Remote host (for remote env)")
 @click.option(
     "--attach",
     "-a",
@@ -399,23 +389,44 @@ def status(ctx):
 @click.option(
     "--interactive-attach", is_flag=True, help="Interactively select files to attach"
 )
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
 @add_options(env_options)
 @click.pass_context
-def run(
+def docker(
     ctx,
     repo_url: str,
     python_file: str,
-    args: tuple,
     branch: str,
-    env_type: str,
     docker_image: Optional[str],
-    remote_host: Optional[str],
     attachments: List[str],
     interactive_attach: bool,
+    args: tuple,
     venv_path: Optional[str],
     python_path: Optional[str],
     no_venv: bool,
 ):
+    """
+    Run script in Docker environment
+
+    REPO_URL: Repository to load (e.g., github.com/user/repo)
+    PYTHON_FILE: Python file to execute (relative path in repository)
+    ARGS: Arguments to pass to the Python file
+    """
+    return run(
+        ctx,
+        repo_url,
+        python_file,
+        args,
+        branch,
+        "docker",
+        docker_image,
+        None,  # remote_host nie jest potrzebny dla docker
+        attachments,
+        interactive_attach,
+        venv_path,
+        python_path,
+        no_venv,
+    )
     """
     Quick run: Load repository and execute a specific Python file
 
