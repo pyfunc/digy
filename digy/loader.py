@@ -3,11 +3,6 @@ Git repository loader for DIGY
 Handles downloading and caching repositories in RAM
 """
 
-"""Git repository loader for DIGY.
-
-Handles downloading and caching repositories in RAM.
-"""
-
 import os
 import re
 import shlex
@@ -15,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -25,16 +21,15 @@ from git import Repo  # type: ignore
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+from .deployer import Deployer
+from .interactive import InteractiveMenu
+
 # Make docker import optional
 try:
-    import docker
-
+    import docker  # type: ignore  # noqa: F401
     DOCKER_AVAILABLE = True
 except ImportError:
     DOCKER_AVAILABLE = False
-
-from .deployer import Deployer
-from .interactive import InteractiveMenu
 
 console = Console()
 
@@ -87,12 +82,39 @@ class GitLoader:
 
     def __init__(self, base_path: Optional[str] = None):
         self.base_path = base_path or tempfile.mkdtemp(prefix="digy_")
-        self.loaded_repos: Dict[str, str] = {}
+        self.loaded_repos: Dict[str, dict] = {}  # Store repo info including type
         self.manifest = self.load_manifest()
         self.ram_path = ""  # Initialize ram_path
         self.repo_path = ""  # Initialize repo_path
         self.load_env_config()
         self._docker_client = None
+        
+    def _get_repo_type(self, repo_url: str) -> str:
+        """Determine the repository type.
+
+        Args:
+            repo_url: URL or path to the repository
+
+        Returns:
+            str: Type of repository ('local', 'ram', 'container', 'remote')
+        """
+        if not isinstance(repo_url, str):
+            return 'remote'
+
+        if os.path.isdir(repo_url):
+            return 'local'
+
+        if self.ram_path and str(repo_url).startswith(self.ram_path):
+            return 'ram'
+
+        if DOCKER_AVAILABLE and hasattr(self, 'docker_client'):
+            try:
+                self.docker_client.containers.get(repo_url)  # type: ignore
+                return 'container'
+            except (docker.errors.NotFound, AttributeError):  # type: ignore
+                pass
+
+        return 'remote'
 
     @property
     def docker_client(self) -> Optional[Any]:
@@ -602,6 +624,27 @@ echo "Repository cloned successfully"
                 console.print(f"❌ Failed to process repository: {e}")
                 return None
 
+    def _setup_repository_environment(self, repo_type: str, repo_url: str) -> bool:
+        """Set up environment for the repository based on its type.
+
+        Args:
+            repo_type: Type of repository
+            repo_url: Repository URL or path
+
+        Returns:
+            bool: True if setup was successful, False otherwise
+        """
+        if repo_type != 'local':
+            if not memory_manager.allocate(repo_url, memory_manager.base_size_mb):
+                console.print("❌ Insufficient memory to load repository")
+                return False
+
+            if repo_type == 'ram':
+                config = self.manifest.get("config", {})
+                ram_size = int(os.getenv("DIGY_RAM_SIZE", config.get("ram_size", 2)))
+                self.create_ram_disk(ram_size)
+        return True
+
     def download_repo(self, repo_url: str, branch: str = "main") -> Optional[str]:
         """Download repository to memory-based location.
 
@@ -616,29 +659,35 @@ echo "Repository cloned successfully"
             repo_info = self.parse_repo_url(repo_url)
             project_name = repo_info["name"]
 
+            # Check if repository is already loaded
             if repo_url in self.loaded_repos:
                 console.print(f"✅ Repository already loaded: {project_name}")
-                return self.loaded_repos[repo_url]
+                return self.loaded_repos[repo_url]["path"]
 
-            if not memory_manager.allocate(repo_url, memory_manager.base_size_mb):
-                console.print("❌ Insufficient memory to load repository")
+            # Determine repository type
+            repo_type = self._get_repo_type(repo_url)
+
+            # Set up environment based on repository type
+            if not self._setup_repository_environment(repo_type, repo_url):
                 return None
 
-            # Create RAM disk with configured size
-            ram_size = int(
-                os.getenv(
-                    "DIGY_RAM_SIZE", self.manifest.get("config", {}).get("ram_size", 2)
-                )
-            )
-            self.create_ram_disk(ram_size)
-
+            # Clone or copy the repository
             local_path = self._clone_repository(repo_info, branch)
+
             if local_path:
-                self.loaded_repos[repo_url] = local_path
-                console.print(f"📦 Repository loaded to: {local_path}")
+                # Store repository info including type and path
+                self.loaded_repos[repo_url] = {
+                    "path": local_path,
+                    "type": repo_type,
+                    "created_at": time.time()
+                }
+                msg = f"📦 Repository loaded to: {local_path} (Type: {repo_type})"
+                console.print(msg)
                 return local_path
 
-            memory_manager.deallocate(repo_url)
+            if repo_type != 'local':
+                memory_manager.deallocate(repo_url)
+
             return None
 
         except Exception as e:
@@ -646,23 +695,88 @@ echo "Repository cloned successfully"
             memory_manager.deallocate(repo_url)
             return None
 
-    def cleanup_repo(self, repo_url: str):
-        """Clean up loaded repository"""
-        if repo_url in self.loaded_repos:
-            local_path = self.loaded_repos[repo_url]
+    def cleanup_repo(self, repo_url: str, force: bool = False) -> bool:
+        """Clean up loaded repository based on its type.
+        
+        Args:
+            repo_url: URL of the repository to clean up
+            force: If True, force cleanup even for local repositories
+            
+        Returns:
+            bool: True if cleanup was successful, False otherwise
+        """
+        if repo_url not in self.loaded_repos:
+            return False
+            
+        repo_info = self.loaded_repos[repo_url]
+        local_path = repo_info["path"]
+        repo_type = repo_info.get("type", "remote")
+        
+        # Skip cleanup for local repositories unless forced
+        if repo_type == 'local' and not force:
+            console.print(f"ℹ️  Keeping local repository: {local_path}")
+            return True
+            
+        try:
+            # Handle cleanup based on repository type
+            if repo_type == 'container' and DOCKER_AVAILABLE and self.docker_client:
+                try:
+                    container = self.docker_client.containers.get(repo_url)
+                    container.remove(force=True)
+                    console.print(f"🗑️  Removed container: {repo_url}")
+                except Exception as e:
+                    console.print(f"⚠️  Failed to remove container {repo_url}: {e}")
+                    
+            elif repo_type == 'ram':
+                # Special handling for RAM disk cleanup
+                if os.path.exists(local_path):
+                    shutil.rmtree(local_path, ignore_errors=True)
+                    console.print(f"🗑️  Cleaned up RAM-based repository: {local_path}")
+            
+            # Clean up the directory if it still exists
             if os.path.exists(local_path):
-                shutil.rmtree(local_path)
-            del self.loaded_repos[repo_url]
+                shutil.rmtree(local_path, ignore_errors=True)
+                
+            # Clean up RAM disk if it's empty
+            if repo_type in ('ram', 'remote') and self.ram_path and os.path.exists(self.ram_path):
+                try:
+                    if not os.listdir(self.ram_path):
+                        os.rmdir(self.ram_path)
+                        console.print(f"🗑️  Removed empty RAM disk: {self.ram_path}")
+                except Exception as e:
+                    console.print(f"⚠️  Failed to remove RAM disk {self.ram_path}: {e}")
+            
+            # Clean up memory allocation
             memory_manager.deallocate(repo_url)
-            console.print(f"🗑️ Cleaned up repository: {repo_url}")
+            del self.loaded_repos[repo_url]
+            
+            console.print(f"✅ Successfully cleaned up repository: {repo_url}")
+            return True
+            
+        except Exception as e:
+            console.print(f"❌ Error cleaning up repository {repo_url}: {e}")
+            return False
 
-    def cleanup_all(self):
-        """Clean up all loaded repositories"""
-        for repo_url in list(self.loaded_repos.keys()):
-            self.cleanup_repo(repo_url)
-
+    def cleanup_all(self, force: bool = False):
+        """Clean up all loaded repositories.
+        
+        Args:
+            force: If True, force cleanup even for local repositories
+        """
+        # Clean up repositories in reverse order of creation
+        repos_to_clean = list(self.loaded_repos.items())
+        repos_to_clean.sort(key=lambda x: x[1].get('created_at', 0))
+        
+        for repo_url, _ in repos_to_clean:
+            self.cleanup_repo(repo_url, force=force)
+            
+        # Clean up base path if it's empty
         if os.path.exists(self.base_path):
-            shutil.rmtree(self.base_path)
+            try:
+                if not os.listdir(self.base_path):
+                    shutil.rmtree(self.base_path, ignore_errors=True)
+            except Exception as e:
+                console.print(f"⚠️  Failed to clean up base path {self.base_path}: {e}")
 
 
 loader_instance = GitLoader()
