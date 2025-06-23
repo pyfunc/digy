@@ -375,8 +375,7 @@ def status(ctx):
 
 
 @main.command()
-@click.argument("repo_url")
-@click.argument("python_file")
+@click.argument("path", nargs=-1, type=click.UNPROCESSED)
 @click.option("--branch", "-b", default="main", help="Git branch to checkout")
 @click.option("--docker-image", help="Docker image to use (for docker env)")
 @click.option(
@@ -389,23 +388,15 @@ def status(ctx):
 @click.option(
     "--interactive-attach", is_flag=True, help="Interactively select files to attach"
 )
-@click.option(
-    "--args",
-    "args_list",
-    multiple=True,
-    help="Arguments to pass to the Python file (use --args arg1 --args arg2 ...)",
-)
 @add_options(env_options)
 @click.pass_context
 def docker(
     ctx,
-    repo_url: str,
-    python_file: str,
+    path: tuple,
     branch: str,
     docker_image: Optional[str],
     attachments: List[str],
     interactive_attach: bool,
-    args_list: List[str],
     venv_path: Optional[str],
     python_path: Optional[str],
     no_venv: bool,
@@ -413,44 +404,35 @@ def docker(
     """
     Run script in Docker environment
 
-    REPO_URL: Repository to load (e.g., github.com/user/repo) or local path
-    PYTHON_FILE: Python file to execute (relative path in repository)
+    PATH: Path to repository and Python file (e.g., examples/basic/hello_world.py)
     """
-    # Sprawdź, czy to lokalna ścieżka
-    if os.path.exists(repo_url):
-        # Jeśli to lokalna ścieżka, użyj jej bezpośrednio
-        return run(
-            ctx,
-            repo_url,
-            python_file,
-            tuple(args_list),
-            branch,
-            "docker",
-            docker_image,
-            None,
-            attachments,
-            interactive_attach,
-            venv_path,
-            python_path,
-            no_venv,
-        )
-    else:
-        # Jeśli to URL repozytorium, użyj go jako repo_url
-        return run(
-            ctx,
-            repo_url,
-            python_file,
-            tuple(args_list),
-            branch,
-            "docker",
-            docker_image,
-            None,
-            attachments,
-            interactive_attach,
-            venv_path,
-            python_path,
-            no_venv,
-        )
+    if len(path) < 1:
+        console.print("❌ Error: Path to Python file is required")
+        sys.exit(1)
+
+    # Dla lokalnej ścieżki, użyj bieżącego katalogu jako repo_path
+    repo_path = os.getcwd()
+    python_file = path[0]
+    args = path[1:]  # reszta argumentów
+
+    # Użyj lokalnej ścieżki jako repo_url
+    repo_url = f"file://{os.path.abspath(repo_path)}"
+    
+    # Utwórz menedżera środowiska
+    env_manager = EnvironmentManager(
+        env_type="docker",
+        venv_path=venv_path,
+        docker_image=docker_image,
+    )
+
+    # Ustaw argumenty w kontekście
+    ctx.obj["args"] = tuple(args)
+    ctx.obj["attachments"] = attachments
+    ctx.obj["interactive_attach"] = interactive_attach
+    ctx.obj["env_manager"] = env_manager
+
+    # Wywołaj funkcję digy z odpowiednimi argumentami
+    return digy(repo_url, branch)
     """
     Run script in Docker environment
 
