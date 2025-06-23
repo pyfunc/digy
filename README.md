@@ -129,7 +129,7 @@ DIGY is designed to work with git repositories. To use DIGY:
    digy local .
    
    # Or specify the script directly (requires git repository)
-   digy run . examples/basic/hello_world.py
+   digy docker examples/basic/hello_world.py
    ```
 
 #### Common Issues
@@ -291,28 +291,28 @@ digy local https://github.com/pyfunc/repo.git --file ./local_script.py
 #### Non-Interactive Mode
 ```bash
 # Run a specific script from a repository
-digy local https://github.com/user/repo.git --script path/to/script.py
+digy local https://github.com/pyfunc/digy.git --script path/to/script.py
 
 # With command-line arguments
-digy local https://github.com/user/repo.git --script main.py -- --arg1 value1
+digy local https://github.com/pyfunc/digy.git --script main.py -- --arg1 value1
 
 # Using environment variables
-DIGY_RAM_SIZE=4 digy local https://github.com/user/repo.git
+DIGY_RAM_SIZE=4 digy local https://github.com/pyfunc/digy.git
 ```
 
 #### Docker Execution
 ```bash
 # Run in a Docker container
-digy docker https://github.com/user/repo.git
+digy docker https://github.com/pyfunc/digy.git
 
 # Specify custom Docker image
-digy docker --image python:3.12 https://github.com/user/repo.git
+digy docker --image python:3.12 https://github.com/pyfunc/digy.git
 ```
 
 #### RAM-Based Execution
 ```bash
 # Run with RAM disk for temporary files
-digy ram https://github.com/user/repo.git --ram-size 2  # 2GB RAM
+digy ram https://github.com/pyfunc/digy.git --ram-size 2  # 2GB RAM
 ```
 
 #### Getting Help
@@ -445,25 +445,25 @@ digy local https://github.com/username/private-repo.git
 
 #### Custom Docker Network
 ```bash
-digy docker --network host https://github.com/user/repo.git
+digy docker --network host https://github.com/pyfunc/digy.git
 ```
 
 #### Volume Mounts
 ```bash
 # Read-only mount
-digy docker --mount ./config:/app/config:ro https://github.com/user/repo.git
+digy docker --mount ./config:/app/config:ro https://github.com/pyfunc/digy.git
 
 # Read-write mount
-digy docker --mount ./data:/app/data:rw https://github.com/user/repo.git
+digy docker --mount ./data:/app/data:rw https://github.com/pyfunc/digy.git
 ```
 
 #### Environment Variables
 ```bash
 # Set environment variables
-digy docker -e DEBUG=1 -e API_KEY=secret https://github.com/user/repo.git
+digy docker -e DEBUG=1 -e API_KEY=secret https://github.com/pyfunc/digy.git
 
 # Load from .env file
-digy docker --env-file .env https://github.com/user/repo.git
+digy docker --env-file .env https://github.com/pyfunc/digy.git
 ```
 
 ### Resource Management
@@ -471,10 +471,10 @@ digy docker --env-file .env https://github.com/user/repo.git
 #### Memory Limits
 ```bash
 # Set memory limit (Docker only)
-digy docker --memory 4g https://github.com/user/repo.git
+digy docker --memory 4g https://github.com/pyfunc/digy.git
 
 # CPU limits
-digy docker --cpus 2 https://github.com/user/repo.git
+digy docker --cpus 2 https://github.com/pyfunc/digy.git
 ```
 
 #### Cleanup
@@ -521,7 +521,7 @@ Error: Container ran out of memory
 **Solution**:
 1. Increase memory allocation:
    ```bash
-   digy docker --memory 8g https://github.com/user/repo.git
+   digy docker --memory 8g https://github.com/pyfunc/digy.git
    ```
 2. Or reduce memory usage in your application
 
@@ -529,7 +529,7 @@ Error: Container ran out of memory
 
 Enable debug logging:
 ```bash
-digy --log-level DEBUG local https://github.com/user/repo.git
+digy --log-level DEBUG local https://github.com/pyfunc/digy.git
 ```
 
 View logs:
@@ -783,7 +783,7 @@ digy jvm github.com/pyfunc/digy script.py
 Główna funkcja ładująca repozytorium i uruchamiająca interaktywne menu.
 
 **Parametry:**
-- `repo_url` (str): URL repozytorium (github.com/user/repo lub pełny URL)
+- `repo_url` (str): URL repozytorium (github.com/pyfunc/digy lub pełny URL)
 - `branch` (str): Gałąź do pobrania (domyślnie 'main')
 
 **Zwraca:**
@@ -806,7 +806,7 @@ from digy.loader import GitLoader
 from digy.deployer import Deployer
 
 loader = GitLoader("/custom/path")
-local_path = loader.download_repo("github.com/user/repo")
+local_path = loader.download_repo("github.com/pyfunc/digy")
 deployer = Deployer(local_path)
 ```
 
@@ -816,13 +816,13 @@ from digy import digy
 
 # Uruchomienie z kodu Pythona
 # Lokalnie
-result = digy.local('github.com/user/repo', 'script.py', ['arg1', 'arg2'])
+result = digy.local('github.com/pyfunc/digy', 'script.py', ['arg1', 'arg2'])
 
 # W pamięci RAM
-result = digy.ram('github.com/user/repo', 'script.py', ['arg1', 'arg2'])
+result = digy.ram('github.com/pyfunc/digy', 'script.py', ['arg1', 'arg2'])
 
 # W Dockerze
-result = digy.docker('github.com/user/repo', 'script.py', ['arg1', 'arg2'])
+result = digy.docker('github.com/pyfunc/digy', 'script.py', ['arg1', 'arg2'])
 
 # Wynik zawiera (success, stdout, stderr)
 print(f"Sukces: {result[0]}")
