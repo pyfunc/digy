@@ -413,24 +413,44 @@ def docker(
     """
     Run script in Docker environment
 
-    REPO_URL: Repository to load (e.g., github.com/user/repo)
+    REPO_URL: Repository to load (e.g., github.com/user/repo) or local path
     PYTHON_FILE: Python file to execute (relative path in repository)
     """
-    return run(
-        ctx,
-        repo_url,
-        python_file,
-        tuple(args_list),
-        branch,
-        "docker",
-        docker_image,
-        None,  # remote_host nie jest potrzebny dla docker
-        attachments,
-        interactive_attach,
-        venv_path,
-        python_path,
-        no_venv,
-    )
+    # Sprawdź, czy to lokalna ścieżka
+    if os.path.exists(repo_url):
+        # Jeśli to lokalna ścieżka, użyj jej bezpośrednio
+        return run(
+            ctx,
+            repo_url,
+            python_file,
+            tuple(args_list),
+            branch,
+            "docker",
+            docker_image,
+            None,
+            attachments,
+            interactive_attach,
+            venv_path,
+            python_path,
+            no_venv,
+        )
+    else:
+        # Jeśli to URL repozytorium, użyj go jako repo_url
+        return run(
+            ctx,
+            repo_url,
+            python_file,
+            tuple(args_list),
+            branch,
+            "docker",
+            docker_image,
+            None,
+            attachments,
+            interactive_attach,
+            venv_path,
+            python_path,
+            no_venv,
+        )
     """
     Run script in Docker environment
 
