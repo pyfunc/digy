@@ -700,7 +700,7 @@ echo "Repository cloned successfully"
         
         Args:
             repo_url: URL of the repository to clean up
-            force: If True, force cleanup even for local repositories
+            force: If True, skip confirmation prompts
             
         Returns:
             bool: True if cleanup was successful, False otherwise
@@ -712,49 +712,69 @@ echo "Repository cloned successfully"
         local_path = repo_info["path"]
         repo_type = repo_info.get("type", "remote")
         
-        # Skip cleanup for local repositories unless forced
-        if repo_type == 'local' and not force:
-            console.print(f"ℹ️  Keeping local repository: {local_path}")
+        # Never clean up local repositories automatically
+        if repo_type == 'local':
+            console.print(f"🔒 Local repository preserved: {local_path}")
+            # Still remove from loaded_repos to maintain consistency
+            del self.loaded_repos[repo_url]
             return True
             
         try:
+            # Ask for confirmation before cleanup unless forced
+            if not force:
+                console.print(f"\n⚠️  You are about to clean up: {repo_url}")
+                console.print(f"Type: {repo_type.upper()}")
+                console.print(f"Location: {local_path}")
+                confirm = input("\nAre you sure you want to continue? [y/N]: ").strip().lower()
+                if confirm != 'y':
+                    console.print("❌ Cleanup cancelled by user")
+                    return False
+            
             # Handle cleanup based on repository type
             if repo_type == 'container' and DOCKER_AVAILABLE and self.docker_client:
                 try:
                     container = self.docker_client.containers.get(repo_url)
+                    console.print(f"🐳 Removing container: {repo_url}")
                     container.remove(force=True)
-                    console.print(f"🗑️  Removed container: {repo_url}")
+                    console.print(f"✅ Successfully removed container: {repo_url}")
                 except Exception as e:
                     console.print(f"⚠️  Failed to remove container {repo_url}: {e}")
+                    return False
                     
             elif repo_type == 'ram':
                 # Special handling for RAM disk cleanup
                 if os.path.exists(local_path):
+                    console.print(f"🧹 Cleaning up RAM-based repository: {local_path}")
                     shutil.rmtree(local_path, ignore_errors=True)
-                    console.print(f"🗑️  Cleaned up RAM-based repository: {local_path}")
+                    console.print(f"✅ Successfully cleaned up RAM-based repository")
             
-            # Clean up the directory if it still exists
-            if os.path.exists(local_path):
+            # Clean up the directory if it still exists (only for non-local repos)
+            if os.path.exists(local_path) and repo_type != 'local':
+                console.print(f"🧹 Removing repository directory: {local_path}")
                 shutil.rmtree(local_path, ignore_errors=True)
                 
             # Clean up RAM disk if it's empty
             if repo_type in ('ram', 'remote') and self.ram_path and os.path.exists(self.ram_path):
                 try:
                     if not os.listdir(self.ram_path):
+                        console.print(f"🧹 Removing empty RAM disk: {self.ram_path}")
                         os.rmdir(self.ram_path)
-                        console.print(f"🗑️  Removed empty RAM disk: {self.ram_path}")
+                        console.print(f"✅ Successfully removed RAM disk")
                 except Exception as e:
                     console.print(f"⚠️  Failed to remove RAM disk {self.ram_path}: {e}")
             
-            # Clean up memory allocation
+            # Clean up memory allocation and tracking
             memory_manager.deallocate(repo_url)
-            del self.loaded_repos[repo_url]
+            if repo_url in self.loaded_repos:  # Double check in case it was already removed
+                del self.loaded_repos[repo_url]
             
             console.print(f"✅ Successfully cleaned up repository: {repo_url}")
             return True
             
         except Exception as e:
             console.print(f"❌ Error cleaning up repository {repo_url}: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def cleanup_all(self, force: bool = False):
