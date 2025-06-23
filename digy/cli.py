@@ -433,21 +433,6 @@ def docker(
 
     # Call the digy function with the correct arguments
     return digy(repo_url, branch)
-    Quick run: Load repository and execute a specific Python file
-
-    REPO_URL: Repository to load (e.g., github.com/user/repo)
-    PYTHON_FILE: Python file to execute (relative path in repository)
-    ARGS: Arguments to pass to the Python file
-    """
-    import shutil
-    import tempfile
-    from urllib.parse import urlparse
-
-    import git
-
-    from .file_utils import attach_files, select_files_interactive
-
-    console.print(f"🚀 Running: {python_file} with args: {args}")
 
     # Set up environment manager
     env_manager = EnvironmentManager(
