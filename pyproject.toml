@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "digy"
-version = "0.2.5"
+version = "0.2.7"
 description = "Do Interactive Git deploY - Deploy Python applications from Git repositories in isolated environments with interactive menu"
 authors = ["Tom Sapletta <info@softreck.dev>"]
 readme = "README.md"
